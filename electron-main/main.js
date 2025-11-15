@@ -1,4 +1,4 @@
-const { app } = require('electron');
+const { app, BrowserWindow } = require('electron');
 
 const createOverlayWindow = require('./windows/overlayWindow');
 const createChatWindow = require('./windows/chatWindow');
@@ -31,9 +31,13 @@ function setupIPC() {
     },
     onToggle: () => {
       // mirror renderer toggle request with global hotkey behaviour
+      if (chatWindow) {
+        chatWindow.isVisible() ? chatWindow.hide() : chatWindow.show();
+      }
     },
     onMarkDone: (stepId) => {
       console.log('Step completed', stepId);
+      // TODO: forward to stepController when implemented
     },
     onAutoAdvanceRequest: (enabled) => {
       console.log('Auto advance set to', enabled);
@@ -45,62 +49,42 @@ function setupIPC() {
   });
 
   registerChatIPC({
-    onSendMessage: (message) => {
-      console.log('User asked:', message);
-      // placeholder: send to LLM service and then forward response via IPC
-      overlayWindow?.webContents.send('overlay:step', {
-        id: `mock-${Date.now()}`,
-        title: 'Mock step from main',
-        description: 'This is coming from Electron main process',
-        actionHint: 'Implement LLM to replace this',
-        annotation: 'circle',
-        target: { x: 400, y: 300, width: 120, height: 60 }
-      });
+    onMessageSend: (message) => {
+      console.log('Chat message from renderer:', message);
+      // TODO: forward messages to LLM client / step controller
     },
-    onHistoryRequest: () => [
-      {
-        id: 'seed-1',
-        role: 'assistant',
-        content: 'Welcome to Visor! I can guide you through desktop flows.'
-      }
-    ]
+    onLoadHistory: async () => {
+      // TODO: return persisted chat history from storage service
+      return [];
+    }
   });
 }
 
-function setupLifecycle() {
-  app.on('window-all-closed', () => {
-    if (process.platform !== 'darwin') {
-      app.quit();
+app.whenReady().then(() => {
+  createWindows();
+  setupIPC();
+
+  registerHotkeys({
+    onToggleOverlay: () => {
+      if (chatWindow) chatWindow.isVisible() ? chatWindow.hide() : chatWindow.show();
+    },
+    onMarkDone: () => {
+      console.log('Global mark done');
     }
   });
 
   app.on('activate', () => {
-    if (!overlayWindow) {
-      createWindows();
-    }
+    if (BrowserWindow.getAllWindows().length === 0) createWindows();
   });
-}
-
-async function main() {
-  if (!isDev) {
-    app.disableHardwareAcceleration();
-  }
-
-  await app.whenReady();
-  createWindows();
-  setupIPC();
-  registerHotkeys({
-    onToggleOverlay: () => overlayWindow?.webContents.send('overlay:toggle'),
-    onMarkDone: () => overlayWindow?.webContents.send('overlay:done-hotkey')
-  });
-  setupLifecycle();
-
-  app.on('before-quit', () => {
-    unregisterHotkeys();
-  });
-}
-
-main().catch((error) => {
-  console.error('Failed to start Visor main process', error);
-  app.quit();
 });
+
+app.on('window-all-closed', () => {
+  if (process.platform !== 'darwin') {
+    app.quit();
+  }
+});
+
+app.on('will-quit', () => {
+  unregisterHotkeys();
+});
+// end of main process code

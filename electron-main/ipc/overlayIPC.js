@@ -1,3 +1,5 @@
+
+// Manages overlay IPC channels
 const { ipcMain } = require('electron');
 
 function registerOverlayIPC({ onReady, onToggle, onMarkDone, onAutoAdvanceRequest, onPointerMode }) {
@@ -7,5 +9,7 @@ function registerOverlayIPC({ onReady, onToggle, onMarkDone, onAutoAdvanceReques
   ipcMain.on('overlay:autoAdvance', (_event, enabled) => onAutoAdvanceRequest?.(enabled));
   ipcMain.on('overlay:pointer-mode', (_event, mode) => onPointerMode?.(mode));
 }
+
+module.exports = registerOverlayIPC;
 
 module.exports = registerOverlayIPC;

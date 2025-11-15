@@ -10,15 +10,48 @@ body {
 }
 
 .chat-shell {
-  width: 520px;
+  width: 100vw;
   height: 100vh;
   display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  padding: 0 32px 48px;
+  background: transparent;
+  -webkit-app-region: drag;
+}
+
+.chat-panel {
+  width: 520px;
+  display: flex;
   flex-direction: column;
-  padding: 32px 32px 40px;
   gap: 16px;
+  pointer-events: auto;
+  border-radius: 32px;
+  background: rgba(6, 8, 10, 0.88);
   backdrop-filter: blur(32px);
-  background: rgba(6, 8, 10, 0.86);
-  border-left: 1px solid rgba(255, 255, 255, 0.06);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
+  padding: 28px;
+}
+
+.chat-panel.collapsed {
+  width: 460px;
+  padding: 0;
+  background: transparent;
+  box-shadow: none;
+  backdrop-filter: none;
+}
+
+.chat-panel.collapsed .chat-input-bar {
+  margin: 0;
+  background: rgba(8, 10, 16, 0.94);
+}
+
+.chat-panel.collapsed .chat-input-bar input {
+  text-align: left;
+}
+
+.no-drag {
+  -webkit-app-region: no-drag;
 }
 
 .chat-header {
@@ -27,6 +60,8 @@ body {
   gap: 8px;
   font-size: 14px;
   color: rgba(227, 230, 240, 0.8);
+  justify-content: space-between;
+  margin: 0;
 }
 
 .chat-status-dot {
@@ -48,6 +83,7 @@ body {
   flex-direction: column;
   gap: 12px;
   padding-right: 6px;
+  max-height: 50vh;
 }
 
 .chat-bubble {
@@ -76,6 +112,15 @@ body {
   border-radius: 28px;
   background: rgba(15, 17, 21, 0.9);
   border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.chat-shell.collapsed .chat-input-bar {
+  margin-left: auto;
+  background: rgba(11, 13, 18, 0.92);
+}
+
+.chat-shell.collapsed .chat-input-bar input {
+  text-align: left;
 }
 
 .chat-input-bar input {

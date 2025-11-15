@@ -1,27 +1,26 @@
 // Connects to the LLM provider
-import { OpenRouter } from '@openrouter/sdk';
+const { OpenRouter } = require('@openrouter/sdk');
 
-const openRouter = new OpenRouter({
-  apiKey: '<OPENROUTER_API_KEY>',
-  defaultHeaders: {
-    'HTTP-Referer': '<YOUR_SITE_URL>', // Optional. Site URL for rankings on openrouter.ai.
-    'X-Title': '<YOUR_SITE_NAME>', // Optional. Site title for rankings on openrouter.ai.
-  },
-});
+async function llmClient(prompt) {
+  const apiKey = process.env.OPENROUTER_API_KEY;
+  if (!apiKey) {
+    throw new Error('OPENROUTER_API_KEY not set in environment');
+  }
 
-const completion = await openRouter.chat.send({
-  model: 'openai/gpt-4o',
-  messages: [
-    {
-      role: 'user',
-      content: 'What is the meaning of life?',
-    },
-  ],
-  stream: false,
-});
+  const openRouter = new OpenRouter({ apiKey });
 
-module.exports = function llmClient() {
-  return completion.choices[0].message.content;
-};
+  const completion = await openRouter.chat.send({
+    model: 'openai/gpt-4o',
+    messages: [
+      {
+        role: 'user',
+        content: prompt || ''
+      }
+    ],
+    stream: false
+  });
 
-console.log(llmClient());
+  return completion?.choices?.[0]?.message?.content ?? null;
+}
+
+module.exports = llmClient;

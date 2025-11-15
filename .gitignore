@@ -1,3 +1,5 @@
 # Ignore dependencies and logs
 node_modules
 logs/*.log
+
+.env
