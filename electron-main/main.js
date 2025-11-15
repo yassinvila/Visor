@@ -4,6 +4,8 @@ const createOverlayWindow = require('./windows/overlayWindow');
 const createChatWindow = require('./windows/chatWindow');
 const registerOverlayIPC = require('./ipc/overlayIPC');
 const registerChatIPC = require('./ipc/chatIPC');
+const stepController = require('./services/stepController');
+const storage = require('./services/storage');
 
 let overlayWindow;
 let chatWindow;
@@ -39,7 +41,8 @@ function setupIPC() {
   
   registerOverlayIPC({
     onReady: () => {
-      // placeholder: request first step from backend
+      // Start requesting steps from stepController
+      stepController.requestNextStep();
     },
     onToggle: () => {
       // mirror renderer toggle request with global hotkey behaviour
@@ -48,8 +51,8 @@ function setupIPC() {
       }
     },
     onMarkDone: (stepId) => {
-      console.log('Step completed', stepId);
-      // TODO: forward to stepController when implemented
+      // Forward step completion to stepController
+      stepController.markDone(stepId);
     },
     onAutoAdvanceRequest: (enabled) => {
       console.log('Auto advance set to', enabled);
@@ -62,17 +65,58 @@ function setupIPC() {
 
   registerChatIPC({
     onMessageSend: (message) => {
-      console.log('Chat message from renderer:', message);
-      // TODO: forward messages to LLM client / step controller
+      // Store the message and set goal in stepController
+      storage.saveChatMessage({ role: 'user', text: message });
+      stepController.setGoal(message);
     },
     onLoadHistory: async () => {
-      // TODO: return persisted chat history from storage service
-      return [];
+      // Return persisted chat history from storage service
+      const history = await storage.loadChatHistory();
+      return history;
     }
   });
 }
 
-app.whenReady().then(() => {
+app.whenReady().then(async () => {
+  // Initialize storage
+  await storage.init();
+
+  // Initialize stepController with callbacks to send steps to overlay and save to chat
+  stepController.init({
+    onStep: (step) => {
+      // Save step to storage
+      storage.logStep(stepController.getState().currentSessionId, step, { fromLLM: true });
+      // Send step to overlay window for rendering
+      overlayWindow?.webContents.send('overlay:step', step);
+      // Optionally save assistant message to chat history
+      storage.saveChatMessage({
+        role: 'assistant',
+        text: step.step_description || step.hintText || '',
+        sessionId: stepController.getState().currentSessionId
+      });
+    },
+    onComplete: (summary) => {
+      // Session finished; notify overlay
+      overlayWindow?.webContents.send('overlay:complete', summary);
+      // Optionally save completion message to chat
+      storage.saveChatMessage({
+        role: 'system',
+        text: `Session complete: ${summary.finalGoal || 'No goal'}`,
+        sessionId: stepController.getState().currentSessionId
+      });
+    },
+    onError: (error) => {
+      // Error occurred; notify overlay and chat
+      const errorMsg = error?.message || String(error);
+      overlayWindow?.webContents.send('overlay:error', { message: errorMsg });
+      storage.logError(error);
+      storage.saveChatMessage({
+        role: 'system',
+        text: `Error: ${errorMsg}`
+      });
+    }
+  });
+
   createWindows();
   setupIPC();
 
