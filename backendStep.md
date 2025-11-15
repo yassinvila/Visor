@@ -15,7 +15,28 @@ Quick snapshot of what’s implemented and what still needs work.
 - Not yet done / needs fixes
   - LLM client: `electron-main/llm/client.js` requires `OPENROUTER_API_KEY` in env; set for live calls.
 
-Immediate next actions:
-1. End-to-end workflow validation and testing.
+## 🧪 Testing
 
-+
+### Test Scripts Available
+- `scripts/diagnoseTLM.js` — Checks environment and imports; identifies missing API key
+- `scripts/testServices.js` — Tests individual services (capture, parser, storage, stepController) without requiring API key
+- `scripts/testLLM.js` — Full integration test with LLM (requires `OPENROUTER_API_KEY`)
+
+### Running Tests
+```bash
+# 1. Diagnose environment and setup
+node scripts/diagnoseTLM.js
+
+# 2. Test services in isolation (uses mock capture)
+export VISOR_USE_REAL_CAPTURE=false
+node scripts/testServices.js
+
+# 3. Full integration test (requires API key)
+export OPENROUTER_API_KEY="sk-..."
+node scripts/testLLM.js
+```
+
+## 📋 Immediate next actions
+1. Run diagnostic test to verify all services load correctly
+2. Set `OPENROUTER_API_KEY` to enable full integration test
+3. Validate end-to-end workflow: capture → LLM → parse → storage
