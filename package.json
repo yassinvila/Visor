@@ -4,9 +4,22 @@
   "version": "0.1.0",
   "main": "electron-main/main.js",
   "scripts": {
-    "start": "electron ."
+    "start": "electron .",
+    "renderer:dev": "vite --config renderer/vite.config.ts",
+    "renderer:build": "vite build --config renderer/vite.config.ts",
+    "renderer:preview": "vite preview --config renderer/vite.config.ts"
   },
   "dependencies": {
-    "electron": "^31.0.0"
+    "@openrouter/sdk": "^0.1.11",
+    "electron": "^39.2.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "@vitejs/plugin-react": "^4.3.4",
+    "typescript": "^5.6.3",
+    "vite": "^5.4.10"
   }
 }
