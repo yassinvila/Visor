@@ -6,6 +6,7 @@ contextBridge.exposeInMainWorld('visor', {
     toggle: () => ipcRenderer.send('overlay:toggle'),
     markDone: (id) => ipcRenderer.send('overlay:done', id),
     setAutoAdvance: (enabled) => ipcRenderer.send('overlay:autoAdvance', enabled),
+    setPointerMode: (mode) => ipcRenderer.send('overlay:pointer-mode', mode),
     onStepUpdate: (callback) => {
       ipcRenderer.on('overlay:step', (_event, payload) => callback(payload));
       return () => ipcRenderer.removeAllListeners('overlay:step');

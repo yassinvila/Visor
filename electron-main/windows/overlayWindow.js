@@ -32,6 +32,8 @@ function createOverlayWindow() {
     }
   });
 
+  win.setIgnoreMouseEvents(true, { forward: true });
+
   if (isDev) {
     win.loadURL('http://localhost:5173/overlay/index.html');
   } else {

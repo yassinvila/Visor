@@ -8,6 +8,7 @@ declare global {
         toggle?: () => void;
         markDone?: (stepId: string) => void;
         setAutoAdvance?: (enabled: boolean) => void;
+        setPointerMode?: (mode: 'interactive' | 'passthrough') => void;
         onStepUpdate?: (cb: (step: GuidanceStep) => void) => () => void;
         onReset?: (cb: () => void) => () => void;
       };

@@ -86,6 +86,13 @@ export const OverlayApp: React.FC = () => {
     setStatus((prev) => (prev === 'guiding' ? 'paused' : 'guiding'));
     overlayBridge?.toggle?.();
   }, [overlayBridge]);
+  const setPointerMode = useCallback(
+    (mode: 'interactive' | 'passthrough') => {
+      overlayBridge?.setPointerMode?.(mode);
+    },
+    [overlayBridge]
+  );
+
 
   const markStepComplete = useCallback(() => {
     if (!currentStep) return;
@@ -150,7 +157,11 @@ export const OverlayApp: React.FC = () => {
     <div className={`overlay-shell status-${status}`}>
       <AnnotationLayer config={annotationConfig} isActive={status === 'guiding'} />
 
-      <aside className="overlay-panel">
+      <aside
+        className="overlay-panel"
+        onMouseEnter={() => setPointerMode('interactive')}
+        onMouseLeave={() => setPointerMode('passthrough')}
+      >
         <header className="overlay-panel__header">
           <div>
             <p className="panel-label">Visor Guidance</p>
@@ -187,10 +198,6 @@ export const OverlayApp: React.FC = () => {
                 {autoAdvance ? 'Auto moving…' : 'Done'}
               </VisorButton>
             </div>
-            <label className="auto-advance">
-              <input type="checkbox" checked={autoAdvance} onChange={toggleAutoAdvance} />
-              Allow auto-advance when clicks are detected
-            </label>
           </div>
         )}
 

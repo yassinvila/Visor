@@ -1,5 +1,4 @@
-const { app, ipcMain } = require('electron');
-const path = require('path');
+const { app } = require('electron');
 
 const createOverlayWindow = require('./windows/overlayWindow');
 const createChatWindow = require('./windows/chatWindow');
@@ -38,6 +37,10 @@ function setupIPC() {
     },
     onAutoAdvanceRequest: (enabled) => {
       console.log('Auto advance set to', enabled);
+    },
+    onPointerMode: (mode) => {
+      const ignore = mode !== 'interactive';
+      overlayWindow?.setIgnoreMouseEvents(ignore, { forward: true });
     }
   });
 

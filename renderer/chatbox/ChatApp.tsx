@@ -1,5 +1,4 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { VisorButton } from '@components/button';
 import { LoadingSpinner } from '@components/loadingSpinner';
 import './chat.css';
 
@@ -89,13 +88,8 @@ export const ChatApp: React.FC = () => {
   return (
     <div className="chat-shell">
       <header className="chat-header">
-        <div>
-          <p className="chat-label">Visor Copilot</p>
-          <h1>Describe the task you need help with</h1>
-        </div>
-        <span className={`status-pill ${isConnected ? 'connected' : 'disconnected'}`}>
-          {isConnected ? 'Connected' : 'Offline mock'}
-        </span>
+        <span className="chat-status-dot" data-connected={isConnected} />
+        <p>Visor Copilot</p>
       </header>
 
       <div className="chat-messages" ref={listRef}>
@@ -111,18 +105,28 @@ export const ChatApp: React.FC = () => {
         )}
       </div>
 
-      <form className="chat-input" onSubmit={handleSubmit}>
-        <textarea
+      <form className="chat-input-bar" onSubmit={handleSubmit}>
+        <button type="button" className="icon-button" aria-label="Add attachment">
+          +
+        </button>
+        <button type="button" className="icon-button" aria-label="Choose model">
+          🌐
+        </button>
+        <button type="button" className="icon-button" aria-label="Enable recording">
+          🎙️
+        </button>
+        <input
+          type="text"
           value={input}
           onChange={(event) => setInput(event.target.value)}
-          placeholder="Example: Walk me through updating Salesforce lead status"
-          rows={3}
+          placeholder="Ask anything"
         />
-        <div className="chat-actions">
-          <VisorButton type="submit" disabled={!input.trim()}>
-            Ask Visor
-          </VisorButton>
-        </div>
+        <button type="button" className="icon-button" aria-label="Voice input">
+          🔘
+        </button>
+        <button type="submit" className="send-button" disabled={!input.trim()}>
+          ↑
+        </button>
       </form>
     </div>
   );
