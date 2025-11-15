@@ -8,8 +8,8 @@
  *  - keep helper exports for testing (similar to screenCapture structure)
  */
 
+require('dotenv').config();
 const fetch = require('node-fetch');
-const dotenv = require('dotenv');
 
 const OPENROUTER_BASE_URL = 'https://openrouter.ai/api/v1';
 const DEFAULT_MODEL = process.env.OPENROUTER_MODEL || 'openai/gpt-4o-mini';
