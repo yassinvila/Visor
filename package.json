@@ -4,7 +4,7 @@
   "version": "0.1.0",
   "main": "electron-main/main.js",
   "scripts": {
-    "start": "npm run build && cross-env NODE_ENV=production electron .",
+    "start": "electron .",
     "renderer:dev": "vite --config renderer/vite.config.ts",
     "renderer:build": "vite build --config renderer/vite.config.ts",
     "renderer:preview": "vite preview --config renderer/vite.config.ts"

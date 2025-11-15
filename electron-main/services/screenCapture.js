@@ -180,6 +180,25 @@ module.exports = {
   loadDemoImage,
   // Internal helpers (for testing/debugging):
   _createMockCapture: createMockCapture,
-  _captureWithRealMethod: captureWithRealMethod
+  _captureWithRealMethod: captureWithRealMethod,
+  _getPrimaryDisplaySize: getPrimaryDisplaySize
 };
+
+/**
+ * Returns the primary display dimensions in pixels.
+ * Uses Electron's screen module when available, otherwise falls back to mock defaults.
+ */
+function getPrimaryDisplaySize() {
+  try {
+    const { screen } = require('electron');
+    const primary = screen.getPrimaryDisplay();
+    return {
+      width: primary.workAreaSize?.width ?? primary.size.width,
+      height: primary.workAreaSize?.height ?? primary.size.height
+    };
+  } catch (error) {
+    console.warn('Electron screen module unavailable, returning default size.', error.message);
+    return { width: 1920, height: 1080 };
+  }
+}
 
