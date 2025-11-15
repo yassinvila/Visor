@@ -4,7 +4,6 @@ const createOverlayWindow = require('./windows/overlayWindow');
 const createChatWindow = require('./windows/chatWindow');
 const registerOverlayIPC = require('./ipc/overlayIPC');
 const registerChatIPC = require('./ipc/chatIPC');
-const { registerHotkeys, unregisterHotkeys } = require('./services/hotkeys');
 
 let overlayWindow;
 let chatWindow;
@@ -64,14 +63,7 @@ app.whenReady().then(() => {
   createWindows();
   setupIPC();
 
-  registerHotkeys({
-    onToggleOverlay: () => {
-      if (chatWindow) chatWindow.isVisible() ? chatWindow.hide() : chatWindow.show();
-    },
-    onMarkDone: () => {
-      console.log('Global mark done');
-    }
-  });
+  // Hotkey registration removed — handle global shortcuts elsewhere if needed.
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindows();
@@ -83,8 +75,3 @@ app.on('window-all-closed', () => {
     app.quit();
   }
 });
-
-app.on('will-quit', () => {
-  unregisterHotkeys();
-});
-// end of main process code

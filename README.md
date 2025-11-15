@@ -14,7 +14,6 @@ Visor is an Electron-based AI co-pilot that guides users through complex desktop
 - **Renderer tooling**: React + TypeScript + Vite (multi-entry for overlay & chatbox)
 - **Styling**: Custom CSS with shared component styles for buttons, modals, and spinners
 - **State/IPC integration**: `window.visor` bridge (provided by the Electron preload) emits guidance steps, chat messages, and command hooks
-- **Hotkeys**: Overlay listens for ⌘⇧O (pause/resume) and ⌘⇧D (mark step done)
 
 ## Getting Started
 ```bash

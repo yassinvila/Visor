@@ -1,5 +1,9 @@
 # Ignore dependencies and logs
 node_modules
 logs/*.log
-
+Pipeline.md
 .env
+.env.local
+.env.*.local
+instructions.md
+
