@@ -1,30 +1,32 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { LoadingSpinner } from '@components/loadingSpinner';
+import React, { useEffect, useState } from 'react';
+import ChatHeader from './components/ChatHeader';
+import MessageList from './components/MessageList';
+import ChatInput from './components/ChatInput';
 import './chat.css';
 
 type ChatMessage = {
   id: string;
   role: 'user' | 'assistant';
   content: string;
+  timestamp?: Date;
 };
 
 const seedMessages: ChatMessage[] = [
-  { id: 'c1', role: 'assistant', content: 'Hi! What workflow should we tackle?' }
+  { 
+    id: 'c1', 
+    role: 'assistant', 
+    content: 'Hi! What workflow should we tackle?',
+    timestamp: new Date()
+  }
 ];
 
 export const ChatApp: React.FC = () => {
   const [messages, setMessages] = useState<ChatMessage[]>(seedMessages);
-  const [input, setInput] = useState('Show me how to create a Jira ticket.');
-  const [isSending, setIsSending] = useState(false);
+  const [isTyping, setIsTyping] = useState(false);
   const [isConnected, setIsConnected] = useState(false);
-  const [isExpanded, setIsExpanded] = useState(false);
   const chatBridge = typeof window !== 'undefined' ? window.visor?.chat : undefined;
-  const listRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    listRef.current?.scrollTo({ top: listRef.current.scrollHeight });
-  }, [messages]);
-
+  // Load chat history on mount and subscribe to new messages
   useEffect(() => {
     let unsubscribe: (() => void) | undefined;
 
@@ -35,7 +37,10 @@ export const ChatApp: React.FC = () => {
       }
       const history = await chatBridge.loadHistory();
       if (history?.length) {
-        setMessages(history);
+        setMessages(history.map(msg => ({
+          ...msg,
+          timestamp: new Date()
+        })));
       }
       setIsConnected(true);
     };
@@ -44,29 +49,32 @@ export const ChatApp: React.FC = () => {
 
     if (chatBridge?.onMessage) {
       unsubscribe = chatBridge.onMessage((message) => {
-        setMessages((prev) => [...prev, message]);
+        setMessages((prev) => [...prev, {
+          ...message,
+          timestamp: new Date()
+        }]);
+        setIsTyping(false);
       });
     }
 
     return () => unsubscribe?.();
   }, [chatBridge]);
 
-  const handleSubmit = (event: React.FormEvent) => {
-    event.preventDefault();
-    if (!input.trim()) return;
-
+  const handleSendMessage = async (content: string) => {
     const newMessage: ChatMessage = {
       id: crypto.randomUUID(),
       role: 'user',
-      content: input.trim()
+      content: content.trim(),
+      timestamp: new Date()
     };
 
     setMessages((prev) => [...prev, newMessage]);
-    setInput('');
-    setIsSending(true);
+    setIsTyping(true);
 
+    // Send to Visor backend via IPC
     chatBridge?.sendMessage?.(newMessage.content);
 
+    // Fallback demo mode if no backend
     if (!chatBridge?.sendMessage) {
       window.setTimeout(() => {
         setMessages((prev) => [
@@ -74,83 +82,20 @@ export const ChatApp: React.FC = () => {
           {
             id: crypto.randomUUID(),
             role: 'assistant',
-            content: 'Working on it! I will highlight the next action on screen.'
+            content: 'Working on it! I will highlight the next action on screen.',
+            timestamp: new Date()
           }
         ]);
-        setIsSending(false);
-      }, 600);
-      return;
+        setIsTyping(false);
+      }, 1000);
     }
-
-    // When we have a backend we rely on the onMessage listener for responses
-    setIsSending(false);
   };
 
-  const expandPanel = () => setIsExpanded(true);
-  const collapsePanel = () => setIsExpanded(false);
-
   return (
-    <div className="chat-shell">
-      <div className={`chat-panel ${isExpanded ? 'expanded' : 'collapsed'} no-drag`}>
-        {isExpanded && (
-          <>
-            <header className="chat-header">
-              <span className="chat-status-dot" data-connected={isConnected} />
-              <p>Visor Copilot</p>
-              <button
-                type="button"
-                className="icon-button"
-                onClick={collapsePanel}
-                aria-label="Collapse panel"
-              >
-                ⌄
-              </button>
-            </header>
-
-            <div className="chat-messages" ref={listRef}>
-              {messages.map((message) => (
-                <article key={message.id} className={`chat-bubble chat-${message.role}`}>
-                  <p>{message.content}</p>
-                </article>
-              ))}
-              {isSending && (
-                <div className="chat-bubble chat-assistant">
-                  <LoadingSpinner label="Visor thinking" />
-                </div>
-              )}
-            </div>
-          </>
-        )}
-
-        <form
-          className="chat-input-bar"
-          onSubmit={handleSubmit}
-          onFocus={expandPanel}
-          onClick={expandPanel}
-        >
-          <button type="button" className="icon-button" aria-label="Add attachment">
-            +
-          </button>
-          <button type="button" className="icon-button" aria-label="Choose model">
-            🌐
-          </button>
-          <button type="button" className="icon-button" aria-label="Enable recording">
-            🎙️
-          </button>
-          <input
-            type="text"
-            value={input}
-            onChange={(event) => setInput(event.target.value)}
-            placeholder="Ask anything"
-          />
-          <button type="button" className="icon-button" aria-label="Voice input">
-            🔘
-          </button>
-          <button type="submit" className="send-button" disabled={!input.trim()}>
-            ↑
-          </button>
-        </form>
-      </div>
+    <div className="app-container">
+      <ChatHeader isConnected={isConnected} />
+      <MessageList messages={messages} isTyping={isTyping} />
+      <ChatInput onSendMessage={handleSendMessage} />
     </div>
   );
 };

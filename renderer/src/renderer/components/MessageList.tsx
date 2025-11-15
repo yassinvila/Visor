@@ -1,11 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-
-interface Message {
-  id: string;
-  role: 'user' | 'assistant';
-  content: string;
-  timestamp?: Date;
-}
+import { Message } from '../types/message';
 
 interface MessageListProps {
   messages: Message[];
@@ -52,4 +46,5 @@ const MessageList: React.FC<MessageListProps> = ({ messages, isTyping }) => {
 };
 
 export default MessageList;
+
 

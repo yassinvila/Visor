@@ -1,23 +1,15 @@
 import React from 'react';
+import { ipcRenderer } from 'electron';
 
-interface ChatHeaderProps {
-  isConnected?: boolean;
-}
-
-const ChatHeader: React.FC<ChatHeaderProps> = ({ isConnected = false }) => {
+const ChatHeader: React.FC = () => {
   const handleClose = () => {
-    if (typeof window !== 'undefined' && (window as any).visor?.window?.close) {
-      (window as any).visor.window.close();
-    }
+    ipcRenderer.send('window-close');
   };
 
   return (
     <div className="chat-header" style={{ WebkitAppRegion: 'drag' } as any}>
       <div className="header-content">
-        <div className="header-title">
-          <span className="chat-status-dot" data-connected={isConnected} />
-          <span>Visor Copilot</span>
-        </div>
+        <div className="header-spacer"></div>
         <button
           className="close-button"
           onClick={handleClose}

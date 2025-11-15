@@ -24,6 +24,19 @@ function createWindows() {
 }
 
 function setupIPC() {
+  const { ipcMain } = require('electron');
+  
+  // Window control handlers
+  ipcMain.on('window-close', (event) => {
+    const window = BrowserWindow.fromWebContents(event.sender);
+    if (window) window.close();
+  });
+  
+  ipcMain.on('window-minimize', (event) => {
+    const window = BrowserWindow.fromWebContents(event.sender);
+    if (window) window.minimize();
+  });
+  
   registerOverlayIPC({
     onReady: () => {
       // placeholder: request first step from backend

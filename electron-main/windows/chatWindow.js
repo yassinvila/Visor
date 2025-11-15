@@ -7,6 +7,8 @@ function createChatWindow() {
   const win = new BrowserWindow({
     width: 420,
     height: 680,
+    minWidth: 360,
+    minHeight: 500,
     frame: false,
     resizable: true,
     transparent: true,

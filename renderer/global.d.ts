@@ -21,6 +21,10 @@ declare global {
           { id: string; role: 'user' | 'assistant'; content: string }[]
         >;
       };
+      window?: {
+        close?: () => void;
+        minimize?: () => void;
+      };
     };
   }
 }
