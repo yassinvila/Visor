@@ -1,0 +1,12 @@
+{
+  "_comment": "Package manifest for Visor Electron app",
+  "name": "visor",
+  "version": "0.1.0",
+  "main": "electron-main/main.js",
+  "scripts": {
+    "start": "electron ."
+  },
+  "dependencies": {
+    "electron": "^31.0.0"
+  }
+}
