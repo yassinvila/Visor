@@ -65,9 +65,23 @@ function setGoal(goal) {
   state.currentGoal = goal;
   state.currentStep = null;
   state.stepHistory = [];
-  state.status = 'in-progress';
+  // Create a session id for persistence/debugging
+  state.currentSessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2,6)}`;
+  state.status = 'ready';
   state.sessionStartTime = Date.now();
   state.isFetching = false;
+
+  // Persist session record (best-effort)
+  try {
+    storage.saveSession({
+      id: state.currentSessionId,
+      goal: goal,
+      startedAt: state.sessionStartTime,
+      status: 'ready'
+    }).catch(() => {});
+  } catch (e) {
+    // Ignore storage errors here
+  }
 }
 
 /**
@@ -210,9 +224,9 @@ async function markDone(stepId) {
  */
 function getState() {
   return {
-    currentGoal: state.currentGoal,
-    currentStepId: state.currentStep?.id,
-    stepCount: state.stepHistory.length + (state.currentStep ? 1 : 0),
+    goal: state.currentGoal,
+    currentSessionId: state.currentSessionId || null,
+    stepNumber: state.stepHistory.length + (state.currentStep ? 1 : 0),
     status: state.status,
     sessionDuration: state.sessionStartTime ? Date.now() - state.sessionStartTime : null
   };

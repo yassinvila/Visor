@@ -135,7 +135,7 @@ function sanitizeStep(step) {
  *   - Success: validated step object with all required fields
  *   - Failure: { error: true, reason: "description" }
  */
-async function parseStepResponse(rawResponse) {
+function parseStepResponse(rawResponse) {
   // Validate input
   if (!rawResponse || typeof rawResponse !== 'string') {
     return {
@@ -176,4 +176,9 @@ async function parseStepResponse(rawResponse) {
   return sanitizeStep(json);
 }
 
-module.exports = parseStepResponse;
+module.exports = {
+  parseStepResponse,
+  extractJSON,
+  validateStepSchema,
+  sanitizeStep
+};
