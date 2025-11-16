@@ -28,20 +28,26 @@ body {
   display: flex;
   flex-direction: column;
   height: 100vh;
-  background: rgba(32, 33, 35, 0.88);
-  backdrop-filter: blur(40px) saturate(180%);
-  -webkit-backdrop-filter: blur(40px) saturate(180%);
-  border-radius: 20px;
+  background: radial-gradient(circle at top left, rgba(255, 255, 255, 0.14), rgba(14, 16, 20, 0.92));
+  backdrop-filter: blur(38px) saturate(190%);
+  -webkit-backdrop-filter: blur(38px) saturate(190%);
+  border-radius: 22px;
   overflow: hidden;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow:
+    0 18px 40px rgba(0, 0, 0, 0.55),
+    0 0 0 0.5px rgba(255, 255, 255, 0.14);
+  border: 1px solid rgba(255, 255, 255, 0.16);
 }
 
 /* Header */
 .chat-header {
-  background: rgba(0, 0, 0, 0.15);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
+  background: linear-gradient(
+    to bottom,
+    rgba(255, 255, 255, 0.08),
+    rgba(0, 0, 0, 0.15)
+  );
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
   padding: 8px 12px;
   display: flex;
   align-items: center;
@@ -61,8 +67,10 @@ body {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 14px;
-  color: rgba(227, 230, 240, 0.8);
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  color: rgba(235, 238, 245, 0.9);
 }
 
 .chat-status-dot {
@@ -167,7 +175,7 @@ body {
 }
 
 .message-text {
-  background: rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.09);
   color: #ececec;
   padding: 12px 16px;
   border-radius: 18px;
@@ -177,12 +185,13 @@ body {
 }
 
 .message.user .message-text {
-  background: #565656;
+  background: linear-gradient(135deg, #4e77ff, #8f5bff);
   border-radius: 18px;
+  color: #f7f9ff;
 }
 
 .message.assistant .message-text {
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.06);
 }
 
 /* Typing Indicator */

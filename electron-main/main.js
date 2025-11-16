@@ -2,6 +2,7 @@ const { app, BrowserWindow } = require('electron');
 
 const createOverlayWindow = require('./windows/overlayWindow');
 const createChatWindow = require('./windows/chatWindow');
+const { createSplashWindow, closeSplashWindow } = require('./windows/splashWindow');
 const registerOverlayIPC = require('./ipc/overlayIPC');
 const registerChatIPC = require('./ipc/chatIPC');
 const stepController = require('./services/stepController');
@@ -9,6 +10,7 @@ const storage = require('./services/storage');
 
 let overlayWindow;
 let chatWindow;
+let splashWindow;
 
 const isDev = process.env.VISOR_DEV_SERVER === 'true';
 
@@ -28,6 +30,13 @@ function createWindows() {
 function setupIPC() {
   const { ipcMain } = require('electron');
   
+  // Splash screen completion handler
+  ipcMain.on('splash:complete', () => {
+    console.log('[Main] Splash animation complete, creating main windows');
+    closeSplashWindow();
+    createWindows();
+  });
+  
   // Window control handlers
   ipcMain.on('window-close', (event) => {
     const window = BrowserWindow.fromWebContents(event.sender);
@@ -41,8 +50,7 @@ function setupIPC() {
   
   registerOverlayIPC({
     onReady: () => {
-      // Start requesting steps from stepController
-      stepController.requestNextStep();
+      // Overlay is ready; wait for a goal before requesting steps
     },
     onToggle: () => {
       // mirror renderer toggle request with global hotkey behaviour
@@ -68,6 +76,8 @@ function setupIPC() {
       // Store the message and set goal in stepController
       storage.saveChatMessage({ role: 'user', text: message });
       stepController.setGoal(message);
+      // Immediately request the first step for this goal (captures screenshot now)
+      stepController.requestNextStep();
     },
     onLoadHistory: async () => {
       // Return persisted chat history from storage service
@@ -78,8 +88,14 @@ function setupIPC() {
 }
 
 app.whenReady().then(async () => {
+  // Show splash screen first
+  splashWindow = createSplashWindow();
+
   // Initialize storage
   await storage.init();
+
+  // Setup IPC handlers (including splash completion) BEFORE initializing stepController
+  setupIPC();
 
   // Initialize stepController with callbacks to send steps to overlay and save to chat
   stepController.init({
@@ -117,14 +133,15 @@ app.whenReady().then(async () => {
     }
   });
 
-  createWindows();
-  setupIPC();
-
+  // Note: createWindows() is called when splash:complete is received
   // Hotkey registration removed — handle global shortcuts elsewhere if needed.
+});
 
-  app.on('activate', () => {
-    if (BrowserWindow.getAllWindows().length === 0) createWindows();
-  });
+app.on('activate', () => {
+  if (BrowserWindow.getAllWindows().length === 0) {
+    // On macOS re-activation, show splash if no windows exist
+    splashWindow = createSplashWindow();
+  }
 });
 
 app.on('window-all-closed', () => {

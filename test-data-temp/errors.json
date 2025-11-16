@@ -1,0 +1,8 @@
+[
+  {
+    "timestamp": "2025-11-16T01:47:33.141Z",
+    "message": "Test error",
+    "stack": "Error: Test error\n    at /Users/williamabraham/Desktop/Visor/electron-mainTEST.js:294:19\n    at runTest (/Users/williamabraham/Desktop/Visor/electron-mainTEST.js:61:11)\n    at testStorage (/Users/williamabraham/Desktop/Visor/electron-mainTEST.js:293:9)\n    at async runAllTests (/Users/williamabraham/Desktop/Visor/electron-mainTEST.js:492:5)",
+    "type": "Error"
+  }
+]

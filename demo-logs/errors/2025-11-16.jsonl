@@ -1,0 +1,6 @@
+{"timestamp":"2025-11-16T01:40:00.362Z","message":"Failed to capture screenshot","stack":"Error: Failed to capture screenshot\n    at demo (/Users/williamabraham/Desktop/Visor/demo-structured-logs.js:93:26)","type":"Error"}
+{"timestamp":"2025-11-16T01:40:00.362Z","message":"LLM API timeout","stack":"Error: LLM API timeout\n    at demo (/Users/williamabraham/Desktop/Visor/demo-structured-logs.js:94:26)","type":"Error"}
+{"timestamp":"2025-11-16T01:43:17.558Z","message":"Failed to capture screenshot","stack":"Error: Failed to capture screenshot\n    at demo (/Users/williamabraham/Desktop/Visor/demo-structured-logs.js:93:26)","type":"Error"}
+{"timestamp":"2025-11-16T01:43:17.558Z","message":"LLM API timeout","stack":"Error: LLM API timeout\n    at demo (/Users/williamabraham/Desktop/Visor/demo-structured-logs.js:94:26)","type":"Error"}
+{"timestamp":"2025-11-16T01:59:51.414Z","message":"Failed to capture screenshot","stack":"Error: Failed to capture screenshot\n    at demo (/Users/williamabraham/Desktop/Visor/demo-structured-logs.js:93:26)","type":"Error"}
+{"timestamp":"2025-11-16T01:59:51.415Z","message":"LLM API timeout","stack":"Error: LLM API timeout\n    at demo (/Users/williamabraham/Desktop/Visor/demo-structured-logs.js:94:26)","type":"Error"}

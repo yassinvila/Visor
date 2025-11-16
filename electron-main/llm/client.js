@@ -11,7 +11,7 @@
 require('dotenv').config();
 const { OpenRouter } = require('@openrouter/sdk');
 
-const DEFAULT_MODEL = process.env.OPENROUTER_MODEL || 'openai/gpt-4o-mini';
+const DEFAULT_MODEL = process.env.OPENROUTER_MODEL || 'openai/gpt-4o';
 const PREFERRED_PROVIDER = process.env.OPENROUTER_PREFERRED_PROVIDER || 'OpenAI';
 const DEFAULT_TEMPERATURE = normalizeTemperature(process.env.OPENROUTER_TEMPERATURE);
 let openRouterClient;
@@ -60,7 +60,7 @@ async function sendCompletion({
   //   max_tokens: 1000,
   //   response_format: { type: "json_object" }
   // };
-  const completion = await client.chat.send({
+  const response = await client.chat.send({
     model: DEFAULT_MODEL,
     temperature: DEFAULT_TEMPERATURE,
     messages,
@@ -68,7 +68,7 @@ async function sendCompletion({
     stream: false
   });
 
-  return completion?.choices?.[0]?.message?.content ?? null;
+  return response?.choices?.[0]?.message?.content ?? null;
 }
 
 // ============================================================================

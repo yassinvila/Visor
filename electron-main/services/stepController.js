@@ -9,6 +9,8 @@
  */
 
 const screenCapture = require('./screenCapture');
+const fs = require('fs');
+const path = require('path');
 const { sendCompletion } = require('../llm/client');
 const { parseStepResponse } = require('../llm/parser');
 const storage = require('./storage');
@@ -121,6 +123,20 @@ async function requestNextStep() {
       throw new Error('Failed to capture screen: returned null');
     }
 
+    // Save screenshot to screenshots/ directory for debugging/traceability
+    try {
+      const screenshotsDir = path.resolve(__dirname, '..', '..', '..', 'visor/screenshots');
+      if (!fs.existsSync(screenshotsDir)) {
+        fs.mkdirSync(screenshotsDir, { recursive: true });
+      }
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+      const filePath = path.join(screenshotsDir, `screenshot-${timestamp}.png`);
+      fs.writeFileSync(filePath, screenshot.imageBuffer);
+      console.log(`[StepController] Saved screenshot to ${filePath}`);
+    } catch (e) {
+      console.warn('[StepController] Failed to save screenshot:', e?.message || e);
+    }
+
     // Step 2: Build prompt with goal and history
     const prompt = buildPrompt(state.currentGoal, state.stepHistory, screenshot);
     const screenshotBase64 = screenshot.imageBuffer?.toString('base64');
@@ -138,6 +154,11 @@ async function requestNextStep() {
     if (!llmResponse) {
       throw new Error('LLM returned empty response');
     }
+
+    // Print raw LLM response before parsing
+    try {
+      console.log('[StepController] LLM raw response:', llmResponse);
+    } catch (_) {}
 
     // Step 4: Parse LLM response into structured step object
     const parsedStep = parseStepResponse(llmResponse);

@@ -1,6 +1,9 @@
 const { contextBridge, ipcRenderer } = require('electron');
 
 contextBridge.exposeInMainWorld('visor', {
+  splash: {
+    complete: () => ipcRenderer.send('splash:complete')
+  },
   overlay: {
     ready: () => ipcRenderer.send('overlay:ready'),
     toggle: () => ipcRenderer.send('overlay:toggle'),

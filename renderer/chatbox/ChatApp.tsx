@@ -26,39 +26,13 @@ export const ChatApp: React.FC = () => {
   const [isConnected, setIsConnected] = useState(false);
   const chatBridge = typeof window !== 'undefined' ? window.visor?.chat : undefined;
 
-  // Load chat history on mount and subscribe to new messages
+  // Subscribe to new messages (no history preload — start with a single Visor seed message)
   useEffect(() => {
     let unsubscribe: (() => void) | undefined;
 
     const hydrate = async () => {
-      if (!chatBridge?.loadHistory) {
-        setIsConnected(false);
-        return;
-      }
-
-      const history = await chatBridge.loadHistory();
-
-      if (history?.length) {
-        const mapped: ChatMessage[] = history
-          .map((msg: any) => {
-            const content = (msg.text ?? msg.content ?? '').toString();
-            const role: ChatMessage['role'] =
-              msg.role === 'assistant' || msg.role === 'system' ? 'assistant' : 'user';
-            return {
-              id: msg.id ?? crypto.randomUUID(),
-              role,
-              content,
-              timestamp: msg.timestamp ? new Date(msg.timestamp) : new Date()
-            };
-          })
-          .filter((m) => m.content.trim().length > 0);
-
-        if (mapped.length > 0) {
-          setMessages(mapped);
-        }
-      }
-
-      setIsConnected(true);
+      // For now, just mark connected if the bridge exists; do not backfill history.
+      setIsConnected(Boolean(chatBridge));
     };
 
     hydrate();

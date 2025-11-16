@@ -1,0 +1,22 @@
+[
+  {
+    "id": "test-session-1",
+    "goal": "Test goal",
+    "startedAt": 1763257653126,
+    "status": "ready"
+  },
+  {
+    "id": "session-2",
+    "goal": "Goal 2"
+  },
+  {
+    "id": "session-3",
+    "goal": "Goal 3"
+  },
+  {
+    "id": "session_1763257653142_6ihqv3",
+    "goal": "Concurrent test",
+    "startedAt": 1763257653142,
+    "status": "ready"
+  }
+]

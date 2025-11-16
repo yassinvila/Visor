@@ -1,0 +1,6 @@
+{"timestamp":"2025-11-16T01:40:00.360Z","sessionId":"session-001","stepId":"step-1","hintText":"Click File menu","bbox":{"x":0.1,"y":0.05,"width":0.05,"height":0.03},"shape":"arrow","label":"File","isFinal":false,"meta":{}}
+{"timestamp":"2025-11-16T01:40:00.361Z","sessionId":"session-001","stepId":"step-2","hintText":"Select New from dropdown","bbox":{"x":0.12,"y":0.1,"width":0.06,"height":0.03},"shape":"circle","label":"New","isFinal":false,"meta":{}}
+{"timestamp":"2025-11-16T01:43:17.557Z","sessionId":"session-001","stepId":"step-1","hintText":"Click File menu","bbox":{"x":0.1,"y":0.05,"width":0.05,"height":0.03},"shape":"arrow","label":"File","isFinal":false,"meta":{}}
+{"timestamp":"2025-11-16T01:43:17.557Z","sessionId":"session-001","stepId":"step-2","hintText":"Select New from dropdown","bbox":{"x":0.12,"y":0.1,"width":0.06,"height":0.03},"shape":"circle","label":"New","isFinal":false,"meta":{}}
+{"timestamp":"2025-11-16T01:59:51.414Z","sessionId":"session-001","stepId":"step-1","hintText":"Click File menu","bbox":{"x":0.1,"y":0.05,"width":0.05,"height":0.03},"shape":"arrow","label":"File","isFinal":false,"meta":{}}
+{"timestamp":"2025-11-16T01:59:51.414Z","sessionId":"session-001","stepId":"step-2","hintText":"Select New from dropdown","bbox":{"x":0.12,"y":0.1,"width":0.06,"height":0.03},"shape":"circle","label":"New","isFinal":false,"meta":{}}

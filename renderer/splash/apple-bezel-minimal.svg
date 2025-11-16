@@ -1,0 +1,51 @@
+/**
+ * apple-bezel-minimal.svg — Ultra-minimal iOS-style bezel
+ * Clean, simple, perfect for splash screens
+ */
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 700" preserveAspectRatio="xMidYMid meet">
+  <defs>
+    <!-- Soft white gradient -->
+    <linearGradient id="minimalGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#ffffff;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#f8f8f8;stop-opacity:1" />
+    </linearGradient>
+    
+    <!-- Ultra-soft shadow -->
+    <filter id="minimalShadow">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="6"/>
+      <feOffset dx="0" dy="2" result="offsetblur"/>
+      <feComponentTransfer>
+        <feFuncA type="linear" slope="0.08"/>
+      </feComponentTransfer>
+      <feMerge>
+        <feMergeNode/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  
+  <!-- Soft shadow -->
+  <rect x="45" y="45" width="910" height="610" rx="56" ry="56" 
+        fill="rgba(0,0,0,0.03)" filter="url(#minimalShadow)"/>
+  
+  <!-- Main bezel frame (very thin) -->
+  <rect x="50" y="50" width="900" height="600" rx="52" ry="52" 
+        fill="url(#minimalGradient)" 
+        stroke="rgba(0,0,0,0.04)" 
+        stroke-width="0.5"/>
+  
+  <!-- Inner screen area (pure black) -->
+  <rect x="62" y="62" width="876" height="576" rx="44" ry="44" 
+        fill="#000000"/>
+  
+  <!-- Subtle top highlight -->
+  <rect x="50" y="50" width="900" height="60" rx="52" ry="52" 
+        fill="rgba(255,255,255,0.6)" 
+        opacity="0.4"/>
+  
+  <!-- Inner stroke for definition -->
+  <rect x="62" y="62" width="876" height="576" rx="44" ry="44" 
+        fill="none" 
+        stroke="rgba(0,0,0,0.08)" 
+        stroke-width="0.5"/>
+</svg>

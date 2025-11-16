@@ -164,6 +164,25 @@ function parseStepResponse(rawResponse) {
     json.shape = json.shape.toLowerCase();
   }
 
+  // Coerce common shape aliases returned by some models
+  // Map 'rect'/'rectangle'/'square' → 'box', 'ellipse'/'oval' → 'circle'
+  if (json && typeof json.shape === 'string') {
+    const shapeAliases = {
+      rect: 'box',
+      rectangle: 'box',
+      square: 'box',
+      box: 'box',
+      ellipse: 'circle',
+      oval: 'circle',
+      circle: 'circle',
+      arrow: 'arrow',
+      pointer: 'arrow'
+    };
+    if (shapeAliases[json.shape]) {
+      json.shape = shapeAliases[json.shape];
+    }
+  }
+
   // Default is_final_step if missing
   if (json && json.is_final_step === undefined) {
     json.is_final_step = false;

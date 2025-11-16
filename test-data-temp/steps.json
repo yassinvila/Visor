@@ -1,0 +1,38 @@
+[
+  {
+    "timestamp": "2025-11-16T01:47:33.128Z",
+    "sessionId": "test-session-1",
+    "stepId": "step-1",
+    "hintText": "Test step",
+    "bbox": {
+      "x": 0.5,
+      "y": 0.5,
+      "width": 0.1,
+      "height": 0.1
+    },
+    "shape": "circle",
+    "label": "Test",
+    "isFinal": false,
+    "meta": {
+      "fromLLM": true
+    }
+  },
+  {
+    "timestamp": "2025-11-16T01:47:33.142Z",
+    "sessionId": "integration-test",
+    "stepId": "s_1763257653142",
+    "hintText": "Integration test step",
+    "bbox": {
+      "x": 0.5,
+      "y": 0.5,
+      "width": 0.1,
+      "height": 0.1
+    },
+    "shape": "circle",
+    "label": "Test",
+    "isFinal": false,
+    "meta": {
+      "test": true
+    }
+  }
+]
