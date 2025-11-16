@@ -13,7 +13,7 @@ const fs = require('fs');
 process.env.VISOR_STRUCTURED_LOGS = 'true';
 process.env.VISOR_DATA_PATH = path.join(__dirname, 'demo-logs');
 
-const storage = require('./electron-main/services/storage');
+const storage = require('../electron-main/services/storage');
 
 async function demo() {
   console.log('🎯 Structured Logging Demo\n');

@@ -12,7 +12,7 @@ async function verify() {
 
   // 1. Check screenCapture mockData flag
   console.log('1. Testing screenCapture mockData flag...');
-  const screenCapture = require('./electron-main/services/screenCapture');
+  const screenCapture = require('../electron-main/services/screenCapture');
   
   try {
     const result = await screenCapture.captureCurrentScreen();
@@ -27,7 +27,7 @@ async function verify() {
 
   // 2. Check storage initialization
   console.log('\n2. Testing storage initialization...');
-  const storage = require('./electron-main/services/storage');
+  const storage = require('../electron-main/services/storage');
   const fs = require('fs');
   
   try {
@@ -74,7 +74,7 @@ async function verify() {
   console.log('   API key length:', process.env.OPENROUTER_API_KEY?.length || 0);
   
   if (process.env.OPENROUTER_API_KEY) {
-    const client = require('./electron-main/llm/client');
+    const client = require('../electron-main/llm/client');
     try {
       console.log('   Attempting API call...');
       const response = await client.sendCompletion({

@@ -7,18 +7,18 @@ const visorText = document.getElementById('visor-text');
 const revealCircle = document.getElementById('reveal-circle');
 const bezelFrame = document.getElementById('bezel-frame');
 
-// Animation sequence timing (in milliseconds) - tightened for snappier feel
+// Animation sequence timing (in milliseconds) — ~5s total with close-back
 const TIMING = {
-  BEZEL_START: 0,        // Bezel starts immediately
-  BEZEL_EXPAND: 600,     // Duration of bezel expansion from nothing
-  BOX_EXPAND: 700,       // Duration of box expansion
-  TEXT_START: 800,       // VISOR text fades in
-  TEXT_FADE_IN: 400,     // Duration of text fade in
-  TEXT_DISPLAY: 600,     // Text stays visible
-  TEXT_FADE_OUT: 300,    // Duration of text fade out
-  REVEAL_START: 1600,    // Reveal starts (edges inward via inverted mask)
-  REVEAL_EXPAND: 1200,   // Duration of reveal
-  TOTAL_DURATION: 3200   // Total animation duration (~3.2s)
+  BEZEL_START: 0,         // Bezel starts immediately
+  BEZEL_EXPAND: 900,      // Duration of bezel expansion from nothing
+  BOX_EXPAND: 1200,       // Duration of box expansion
+  TEXT_START: 1100,       // VISOR text fades in
+  TEXT_FADE_IN: 600,      // Duration of text fade in
+  TEXT_DISPLAY: 1200,     // Text stays visible
+  TEXT_FADE_OUT: 600,     // Duration of text fade out
+  SHRINK_START: 3800,     // Start closing back to the center
+  SHRINK_DURATION: 900,   // Duration of shrink/vanish
+  TOTAL_DURATION: 5000    // Total animation duration (~5.0s)
 };
 
 /**
@@ -57,7 +57,7 @@ function startSplashSequence() {
     whiteBox.classList.add('expanding');
   }, 200);
 
-  // Step 2: Fade in VISOR text at 1.7s
+  // Step 2: Fade in VISOR text
   setTimeout(() => {
     visorText.classList.add('fade-in-text');
   }, TIMING.TEXT_START);
@@ -68,33 +68,55 @@ function startSplashSequence() {
     visorText.classList.add('fade-out-text');
   }, TIMING.TEXT_START + TIMING.TEXT_FADE_IN + TIMING.TEXT_DISPLAY);
 
-  // Step 4: Start the reveal - transparency comes from edges inward
+  // Step 4: Close back to center (shrink + fade)
   setTimeout(() => {
-    // Drive reveal via CSS variable animation on #white-box
-    whiteBox.style.setProperty('--reveal-duration', `${TIMING.REVEAL_EXPAND}ms`);
-    whiteBox.classList.add('reveal-expanding');
-  }, TIMING.REVEAL_START);
+    whiteBox.classList.remove('reveal-expanding'); // ensure no mask is active
+    whiteBox.style.setProperty('--shrink-duration', `${TIMING.SHRINK_DURATION}ms`);
+    whiteBox.classList.add('shrink-out');
+    // Fade bezel towards the end to avoid abrupt cut
+    setTimeout(() => bezelFrame.classList.add('bezel-fade-out'), Math.max(0, TIMING.SHRINK_DURATION - 600));
+  }, TIMING.SHRINK_START);
 
-  // Step 5: Fade out bezel as reveal completes
-  setTimeout(() => {
-    // Outward fade (scale up + fade) for the bezel frame
-    bezelFrame.classList.add('bezel-fade-out');
-  }, TIMING.REVEAL_START + Math.max(0, TIMING.REVEAL_EXPAND - 800));
-
-  // Step 6: Ensure everything is fully transparent before completion
+  // Step 5: Final safety hide right before completion
   setTimeout(() => {
     whiteBox.style.opacity = '0';
-    whiteBox.style.display = 'none';
     bezelFrame.style.opacity = '0';
-    bezelFrame.style.display = 'none';
   }, TIMING.TOTAL_DURATION - 100);
 
-  // Step 7: Notify Electron that splash is complete
+  // Step 6: Notify Electron that splash is complete
   setTimeout(() => {
     if (window.visor && window.visor.splash && window.visor.splash.complete) {
       window.visor.splash.complete();
     }
   }, TIMING.TOTAL_DURATION);
+
+  // Robustness: also finish on animationend of the reveal
+  const finishOnce = (() => {
+    let done = false;
+    return () => {
+      if (done) return;
+      done = true;
+      try {
+        whiteBox.style.opacity = '0';
+        whiteBox.style.display = 'none';
+        bezelFrame.style.opacity = '0';
+        bezelFrame.style.display = 'none';
+      } catch (_) {}
+      if (window.visor && window.visor.splash && window.visor.splash.complete) {
+        window.visor.splash.complete();
+      }
+    };
+  })();
+
+  whiteBox.addEventListener('animationend', (e) => {
+    // Finish when the shrink completes
+    if (e.animationName === 'shrinkBox') {
+      finishOnce();
+    }
+  });
+
+  // Safety timeout in case of throttling or unsupported CSS features
+  setTimeout(finishOnce, TIMING.TOTAL_DURATION + 500);
 }
 
 // Start the sequence when DOM is ready
@@ -105,11 +127,11 @@ if (document.readyState === 'loading') {
 }
 
 // Debug: log animation milestones
-console.log('[Splash] Animation sequence started (~3.2s total)');
+console.log('[Splash] Animation sequence started (~5.0s total)');
 setTimeout(() => console.log('[Splash] Bezel expand complete'), TIMING.BEZEL_EXPAND);
 setTimeout(() => console.log('[Splash] Box expansion complete'), 200 + TIMING.BOX_EXPAND);
 setTimeout(() => console.log('[Splash] Text fade in'), TIMING.TEXT_START);
 setTimeout(() => console.log('[Splash] Text visible'), TIMING.TEXT_START + TIMING.TEXT_FADE_IN);
 setTimeout(() => console.log('[Splash] Text fade out complete'), TIMING.TEXT_START + TIMING.TEXT_FADE_IN + TIMING.TEXT_DISPLAY + TIMING.TEXT_FADE_OUT);
-setTimeout(() => console.log('[Splash] Reveal from edges'), TIMING.REVEAL_START);
-setTimeout(() => console.log('[Splash] Animation complete (~3.2s)'), TIMING.TOTAL_DURATION);
+setTimeout(() => console.log('[Splash] Closing back to center'), TIMING.SHRINK_START);
+setTimeout(() => console.log('[Splash] Animation complete (~5.0s)'), TIMING.TOTAL_DURATION);
