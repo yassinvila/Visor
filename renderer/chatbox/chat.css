@@ -21,6 +21,8 @@ body {
 #root {
   width: 100vw;
   height: 100vh;
+  opacity: 0;
+  animation: visorFadeIn 300ms ease-out forwards;
 }
 
 /* Main container */
@@ -352,4 +354,14 @@ body {
 
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(255, 255, 255, 0.3);
+}
+
+/* Start fade-in animation for chatbox */
+@keyframes visorFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #root { opacity: 1; animation: none; }
 }
