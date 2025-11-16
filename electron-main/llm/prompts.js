@@ -25,10 +25,10 @@ Output MUST be valid JSON matching this schema:
   "step_description": "string",
   "shape": "circle" | "arrow" | "box",
   "bbox": {
-    "x": 0.0,
-    "y": 0.0,
-    "width": 0.0,
-    "height": 0.0
+    "x": 0.00,
+    "y": 0.00,
+    "width": 0.00,
+    "height": 0.00
   },
   "label": "text to show next to the hint",
   "is_final_step": false

@@ -16,9 +16,25 @@ const isDev = process.env.VISOR_DEV_SERVER === 'true';
 
 function createWindows() {
   overlayWindow = createOverlayWindow();
+  // Register overlay with screenCapture so screenshots omit the overlay
+  try {
+    const screenCapture = require('./services/screenCapture');
+    if (screenCapture && typeof screenCapture.setOverlayWindow === 'function') {
+      screenCapture.setOverlayWindow(overlayWindow);
+    }
+  } catch (err) {
+    console.warn('Failed to register overlay window with screenCapture:', err?.message || err);
+  }
   chatWindow = createChatWindow();
 
   overlayWindow.on('closed', () => {
+    // Clear overlay reference in capture service
+    try {
+      const screenCapture = require('./services/screenCapture');
+      if (screenCapture && typeof screenCapture.clearOverlayWindow === 'function') {
+        screenCapture.clearOverlayWindow();
+      }
+    } catch (_) {}
     overlayWindow = undefined;
   });
 

@@ -131,7 +131,39 @@ async function captureWithFallbacks() {
 
 async function captureCurrentScreen() {
   try {
-    // In production mode (default), attempt real capture first.
+    // If an overlay window has been registered, hide it briefly to avoid
+    // capturing the overlay itself in screenshots. This is important for
+    // overlays that are always-on-top/transparent.
+    if (overlayWindowRef) {
+      let overlayWasVisible = false;
+      try {
+        if (!overlayWindowRef.isDestroyed() && overlayWindowRef.isVisible && overlayWindowRef.isVisible()) {
+          overlayWasVisible = true;
+          try { overlayWindowRef.hide(); } catch (_) {}
+          // Allow compositor time to repaint without the overlay
+          await new Promise((res) => setTimeout(res, 140));
+        }
+      } catch (_) {
+        // ignore overlay hide errors and proceed with capture
+      }
+
+      try {
+        if (USE_REAL_CAPTURE) {
+          const real = await captureWithFallbacks();
+          return real;
+        }
+        return createMockCapture();
+      } finally {
+        // Restore overlay visibility if we hid it
+        try {
+          if (overlayWasVisible && !overlayWindowRef.isDestroyed()) {
+            overlayWindowRef.show();
+          }
+        } catch (_) {}
+      }
+    }
+
+    // No overlay registered — normal capture flow
     if (USE_REAL_CAPTURE) {
       const real = await captureWithFallbacks();
       return real;
@@ -144,6 +176,19 @@ async function captureCurrentScreen() {
     console.error('captureCurrentScreen error:', err?.message || err);
     return createMockCapture();
   }
+}
+
+// Module-scoped reference to an overlay BrowserWindow (optional). Main process
+// should call `setOverlayWindow(win)` after creating the overlay window so
+// the capture service can hide/show it during screenshots.
+let overlayWindowRef = null;
+
+function setOverlayWindow(win) {
+  overlayWindowRef = win;
+}
+
+function clearOverlayWindow() {
+  overlayWindowRef = null;
 }
 
 async function loadDemoImage(imagePath) {
@@ -172,6 +217,8 @@ async function loadDemoImage(imagePath) {
 
 module.exports = {
   captureCurrentScreen,
-  loadDemoImage
+  loadDemoImage,
+  setOverlayWindow,
+  clearOverlayWindow
 };
 

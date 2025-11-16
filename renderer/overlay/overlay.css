@@ -6,7 +6,8 @@
 body {
   margin: 0;
   padding: 0;
-  background: transparent;
+  /* add slight dark glass behind the overlay window itself so changes are visible immediately */
+  background: linear-gradient(180deg, rgba(8, 10, 16, 0.22), rgba(8, 10, 16, 0.28));
   overflow: hidden;
 }
 
@@ -19,6 +20,18 @@ body {
   justify-content: flex-end;
   align-items: flex-start;
   padding: 32px;
+}
+
+.overlay-shell::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(1200px 800px at 20% 10%, rgba(255, 255, 255, 0.10), transparent 60%),
+    linear-gradient(135deg, rgba(8, 10, 16, 0.50), rgba(8, 10, 16, 0.75));
+  backdrop-filter: blur(8px) saturate(125%);
+  z-index: 0;
 }
 
 .overlay-card {
@@ -35,11 +48,19 @@ body {
   flex-direction: column;
   gap: 16px;
   z-index: 2;
+  /* Smooth slide animation when card position (left/top) changes */
+  transition: left 260ms cubic-bezier(0.22, 1, 0.36, 1), top 260ms cubic-bezier(0.22, 1, 0.36, 1), transform 220ms ease;
+  will-change: left, top, transform;
 }
 
 .overlay-card-dragging {
   user-select: none;
-  transition: none;
+  transition: none !important;
+}
+
+/* Slight scale while the card is moving programmatically */
+.overlay-card.overlay-moving {
+  transform: scale(1.02);
 }
 
 .overlay-label {
@@ -47,18 +68,23 @@ body {
   font-size: 12px;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  color: rgba(244, 246, 251, 0.85);
+  color: rgba(244, 246, 251, 0.75);
 }
 
 .overlay-title {
   margin: 0;
-  font-size: 22px;
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  color: #f5f7fb;
+  text-shadow: 0 1px 14px rgba(255, 255, 255, 0.12);
 }
 
 .overlay-text {
   margin: 0;
   font-size: 15px;
-  color: rgba(244, 246, 251, 0.82);
+  color: rgba(244, 246, 251, 0.88);
+  text-shadow: 0 1px 12px rgba(0, 0, 0, 0.25);
 }
 
 .overlay-step-list {

@@ -33,6 +33,13 @@ function createChatWindow() {
 
   win.once('ready-to-show', () => win.show());
 
+  // Prevent chat window content from appearing in screenshots/recordings
+  try {
+    if (typeof win.setContentProtection === 'function') {
+      win.setContentProtection(true);
+    }
+  } catch (_) {}
+
   return win;
 }
 
