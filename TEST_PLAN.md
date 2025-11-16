@@ -73,15 +73,6 @@ node scripts/testServicesUnit.js
   - getState returns state
   - Prevents concurrent requests
 
-**Expected:** All pass
-
----
-
-### Phase 4: Full Integration (Requires API Key)
-```bash
-export OPENROUTER_API_KEY="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"
-node scripts/testLLM.js
-```
 
 **What it tests:**
 - Real screenshot capture

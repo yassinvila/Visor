@@ -35,13 +35,29 @@ export const ChatApp: React.FC = () => {
         setIsConnected(false);
         return;
       }
+
       const history = await chatBridge.loadHistory();
+
       if (history?.length) {
-        setMessages(history.map(msg => ({
-          ...msg,
-          timestamp: new Date()
-        })));
+        const mapped: ChatMessage[] = history
+          .map((msg: any) => {
+            const content = (msg.text ?? msg.content ?? '').toString();
+            const role: ChatMessage['role'] =
+              msg.role === 'assistant' || msg.role === 'system' ? 'assistant' : 'user';
+            return {
+              id: msg.id ?? crypto.randomUUID(),
+              role,
+              content,
+              timestamp: msg.timestamp ? new Date(msg.timestamp) : new Date()
+            };
+          })
+          .filter((m) => m.content.trim().length > 0);
+
+        if (mapped.length > 0) {
+          setMessages(mapped);
+        }
       }
+
       setIsConnected(true);
     };
 
