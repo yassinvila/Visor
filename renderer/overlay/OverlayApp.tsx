@@ -23,8 +23,6 @@ export const OverlayApp: React.FC = () => {
   const [dragging, setDragging] = useState(false);
   const dragStartRef = useRef<{ mouseX: number; mouseY: number; x: number; y: number } | null>(null);
   const cardRef = useRef<HTMLElement | null>(null);
-  const [isMoving, setIsMoving] = useState(false);
-  const moveTimeoutRef = useRef<number | null>(null);
 
   const overlayBridge = typeof window !== 'undefined' ? window.visor?.overlay : undefined;
   const currentStep = steps[activeIndex] ?? null;
@@ -131,53 +129,10 @@ export const OverlayApp: React.FC = () => {
             }
 
             // apply position
-            const margin = 24; // keep card away from edges
-            const finalX = Math.max(margin, Math.min(Math.round(desiredX), Math.max(margin, viewportSize.width - cardW - margin)));
-            const finalY = Math.max(margin, Math.min(Math.round(desiredY), Math.max(margin, viewportSize.height - cardH - margin)));
-
-            // avoid overlapping the annotation: if the computed card rect
-            // intersects the annotation box, try alternate placements
-            const willOverlap = (x: number, y: number) => {
-              const cardRect = { x, y, width: cardW, height: cardH };
-              const overlapX = Math.max(0, Math.min(cardRect.x + cardRect.width, box.x + box.width) - Math.max(cardRect.x, box.x));
-              const overlapY = Math.max(0, Math.min(cardRect.y + cardRect.height, box.y + box.height) - Math.max(cardRect.y, box.y));
-              return overlapX > 0 && overlapY > 0;
-            };
-
-            let chosenX = finalX;
-            let chosenY = finalY;
-
-            if (willOverlap(chosenX, chosenY)) {
-              // Try placing to the left
-              const leftX = Math.max(margin, Math.min(Math.round(box.x - cardW - padding), viewportSize.width - cardW - margin));
-              if (!willOverlap(leftX, box.y)) {
-                chosenX = leftX;
-                chosenY = Math.max(margin, Math.min(box.y, viewportSize.height - cardH - margin));
-              } else {
-                // Try above
-                const aboveY = Math.max(margin, Math.min(Math.round(box.y - cardH - padding), viewportSize.height - cardH - margin));
-                if (!willOverlap(box.x, aboveY)) {
-                  chosenX = Math.max(margin, Math.min(Math.round(box.x), viewportSize.width - cardW - margin));
-                  chosenY = aboveY;
-                } else {
-                  // Try below
-                  const belowY = Math.max(margin, Math.min(Math.round(box.y + box.height + padding), viewportSize.height - cardH - margin));
-                  chosenX = Math.max(margin, Math.min(Math.round(box.x), viewportSize.width - cardW - margin));
-                  chosenY = belowY;
-                }
-              }
-            }
-
-            setIsMoving(true);
-            if (moveTimeoutRef.current) {
-              window.clearTimeout(moveTimeoutRef.current);
-            }
-            moveTimeoutRef.current = window.setTimeout(() => {
-              setIsMoving(false);
-              moveTimeoutRef.current = null;
-            }, 320);
-
-            setCardPosition({ x: chosenX, y: chosenY });
+              const margin = 24; // keep card away from edges
+              const finalX = Math.max(margin, Math.min(Math.round(desiredX), Math.max(margin, viewportSize.width - cardW - margin)));
+              const finalY = Math.max(margin, Math.min(Math.round(desiredY), Math.max(margin, viewportSize.height - cardH - margin)));
+              setCardPosition({ x: finalX, y: finalY });
           }
         } catch (e) {
           // Ignore positioning errors — keep existing card position
@@ -264,7 +219,7 @@ export const OverlayApp: React.FC = () => {
 
       <section
         ref={(el) => { cardRef.current = el as HTMLElement; }}
-        className={`overlay-card ${dragging ? 'overlay-card-dragging' : ''} ${isMoving ? 'overlay-moving' : ''}`}
+        className={`overlay-card ${dragging ? 'overlay-card-dragging' : ''}`}
         style={{ position: 'absolute', left: `${cardPosition.x}px`, top: `${cardPosition.y}px`, cursor: dragging ? 'grabbing' : 'grab' } as React.CSSProperties}
         onMouseEnter={() => setPointerMode('interactive')}
         onMouseLeave={() => !dragging && setPointerMode('passthrough')}

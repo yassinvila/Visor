@@ -25,7 +25,8 @@ contextBridge.exposeInMainWorld('visor', {
       ipcRenderer.on('chat:message', (_event, payload) => callback(payload));
       return () => ipcRenderer.removeAllListeners('chat:message');
     },
-    loadHistory: () => ipcRenderer.invoke('chat:history')
+    loadHistory: () => ipcRenderer.invoke('chat:history'),
+    expand: () => ipcRenderer.send('chat:expand')
   },
   window: {
     close: () => ipcRenderer.send('window-close'),

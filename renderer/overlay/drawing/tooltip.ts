@@ -22,6 +22,12 @@ export function tooltipStyle(target: BoundingBox): CSSProperties {
     left: `${left}px`,
     top: `${top}px`,
     width: `${tooltipWidth}px`,
-    height: `${tooltipHeight}px`
+    height: `${tooltipHeight}px`,
+    borderRadius: '16px',
+    border: '1px solid rgba(255, 255, 255, 0.16)',
+    background: 'rgba(8, 10, 16, 0.95)',
+    boxShadow: '0 18px 40px rgba(0, 0, 0, 0.7), 0 0 0 0.5px rgba(255, 255, 255, 0.18)',
+    color: '#f6fbff',
+    padding: '12px 14px'
   };
 }

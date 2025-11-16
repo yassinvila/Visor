@@ -24,6 +24,7 @@ export const ChatApp: React.FC = () => {
   const [messages, setMessages] = useState<ChatMessage[]>(seedMessages);
   const [isTyping, setIsTyping] = useState(false);
   const [isConnected, setIsConnected] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(true);
   const chatBridge = typeof window !== 'undefined' ? window.visor?.chat : undefined;
 
   // Subscribe to new messages (no history preload — start with a single Visor seed message)
@@ -82,10 +83,13 @@ export const ChatApp: React.FC = () => {
   };
 
   return (
-    <div className="app-container">
-      <ChatHeader isConnected={isConnected} />
-      <MessageList messages={messages} isTyping={isTyping} />
-      <ChatInput onSendMessage={handleSendMessage} />
+    <div className={`app-container ${isCollapsed ? 'collapsed' : ''}`}>
+      {!isCollapsed && <ChatHeader isConnected={isConnected} />}
+      {!isCollapsed && <MessageList messages={messages} isTyping={isTyping} />}
+      <ChatInput
+        onSendMessage={handleSendMessage}
+        onFocusInput={() => setIsCollapsed(false)}
+      />
     </div>
   );
 };

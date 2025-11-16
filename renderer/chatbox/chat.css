@@ -39,6 +39,35 @@ body {
   border: 1px solid rgba(255, 255, 255, 0.16);
 }
 
+/* Collapsed state: window height is small; show only the input pill, no big panel */
+.app-container.collapsed {
+  height: auto;
+  background: transparent;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  box-shadow: none;
+  border: none;
+  border-radius: 0;
+  overflow: visible;
+}
+.app-container.collapsed .chat-header,
+.app-container.collapsed .message-list {
+  display: none !important;
+}
+.app-container.collapsed .chat-input {
+  background: transparent;
+  padding: 8px 12px;
+}
+.app-container.collapsed .input-container {
+  border-radius: 22px;
+  background: rgba(62, 62, 62, 0.72);
+  backdrop-filter: blur(16px) saturate(140%);
+  -webkit-backdrop-filter: blur(16px) saturate(140%);
+  box-shadow:
+    0 10px 26px rgba(0, 0, 0, 0.28),
+    0 0 0 0.5px rgba(255, 255, 255, 0.12);
+}
+
 /* Header */
 .chat-header {
   background: linear-gradient(

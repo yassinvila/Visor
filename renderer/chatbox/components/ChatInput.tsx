@@ -2,9 +2,10 @@ import React, { useState, KeyboardEvent } from 'react';
 
 interface ChatInputProps {
   onSendMessage: (content: string) => void;
+  onFocusInput?: () => void;
 }
 
-const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage }) => {
+const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, onFocusInput }) => {
   const [input, setInput] = useState('');
 
   const handleSend = () => {
@@ -28,6 +29,10 @@ const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage }) => {
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={handleKeyDown}
+          onFocus={() => {
+            (window as any)?.visor?.chat?.expand?.();
+            onFocusInput?.();
+          }}
           placeholder="Ask anything"
           rows={1}
           className="input-field"

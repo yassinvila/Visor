@@ -30,7 +30,11 @@ export function buildAnnotationConfig(shape: AnnotationType, target: BoundingBox
     type: 'box',
     boxStyle: {
       ...baseBox,
-      borderRadius: '12px'
+      borderRadius: '14px',
+      border: '1.5px solid rgba(255, 255, 255, 0.92)',
+      boxShadow:
+        '0 0 0 1px rgba(255, 255, 255, 0.22) inset, 0 10px 26px rgba(0, 0, 0, 0.28)',
+      background: 'transparent'
     }
   };
 }

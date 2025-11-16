@@ -6,8 +6,8 @@
 body {
   margin: 0;
   padding: 0;
-  /* add slight dark glass behind the overlay window itself so changes are visible immediately */
-  background: linear-gradient(180deg, rgba(8, 10, 16, 0.22), rgba(8, 10, 16, 0.28));
+  /* fully transparent window background */
+  background: transparent;
   overflow: hidden;
 }
 
@@ -22,15 +22,17 @@ body {
   padding: 32px;
 }
 
+/* Only a subtle border frame; no background tint */
 .overlay-shell::after {
   content: '';
   position: fixed;
-  inset: 0;
+  inset: 12px;
+  border-radius: 28px;
   pointer-events: none;
-  background:
-    radial-gradient(1200px 800px at 20% 10%, rgba(255, 255, 255, 0.10), transparent 60%),
-    linear-gradient(135deg, rgba(8, 10, 16, 0.50), rgba(8, 10, 16, 0.75));
-  backdrop-filter: blur(8px) saturate(125%);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  box-shadow:
+    0 18px 40px rgba(0, 0, 0, 0.28),
+    0 0 0 0.5px rgba(255, 255, 255, 0.12);
   z-index: 0;
 }
 
