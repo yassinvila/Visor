@@ -1,20 +1,27 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>VISOR - Loading</title>
-  <link rel="stylesheet" href="splash.css">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Visor — Splash</title>
+  <link rel="stylesheet" href="./splash.css" />
 </head>
-<body>
-  <div id="splash-container">
-    <div id="bezel-frame">
-      <img src="apple-bezel.svg" alt="" class="bezel-svg" />
+<body id="splash-root" aria-hidden="false">
+  <div class="vignette-bg" aria-hidden="true"></div>
+
+  <main class="splash-container" role="dialog" aria-modal="true" aria-label="Visor splash screen">
+    <div class="splash-panel" id="splash-panel" tabindex="-1" aria-hidden="false" aria-describedby="splash-desc">
+      <div class="bezel-mask" aria-hidden="true"></div>
+      <div class="panel-gloss" aria-hidden="true"></div>
+      <div class="splash-content" role="document">
+        <h1 id="splash-brand" class="splash-brand" aria-label="Visor">VISOR</h1>
+        <p id="splash-desc" class="visually-hidden">Starting Visor. Loading user interface.</p>
+        <!-- Added loading spinner for better user feedback -->
+        <div class="loading-spinner" aria-hidden="true"></div>
+      </div>
     </div>
-    <div id="white-box"></div>
-    <div id="visor-text">VISOR</div>
-    <div id="reveal-circle"></div>
-  </div>
-  <script src="splash.js"></script>
+  </main>
+
+  <script type="module" src="./splash.js"></script>
 </body>
 </html>

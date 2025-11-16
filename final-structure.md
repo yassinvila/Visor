@@ -1,0 +1,102 @@
+## Full Repository Folder Structure (with short comments)
+
+Below is a concise tree of the repository and a one-line comment for the important files/folders. Paths are relative to the repository root.
+
+- / (repo root)
+  - backendStep.md                # design notes for backend workflow
+  - final.md                      # consolidated summary (main)
+  - final-structure.md            # this file (folder tree)
+  - README.md                     # project's primary README (archival source)
+  - CODEBASE_ANALYSIS.md          # analysis of repository structure and design choices
+  - TESTING.md                    # testing instructions and notes
+  - TEST_PLAN.md                  # planned test scenarios
+  - ISSUES_FOUND.md               # documented issues and TODOs
+  - SPLASH_IMPLEMENTATION.md      # splash screen design/notes
+  - package.json                  # npm metadata and scripts
+  - tsconfig.json                 # TypeScript config for renderer
+  - visor@0.1.0                   # packaged artifact (if present)
+  - assets/                       # icons and static assets
+    - icons/                      # app icons
+  - config/                       # runtime / default configuration JSON files
+    - default.json
+    - modelSettings.json
+    - schema.json
+  - demo-structured-logs.js       # helper to generate demo logs
+  - demo-logs/                    # sample logs used for development/testing
+  - errors/                       # runtime error logs (JSONL)
+  - logs/                         # structured run logs (JSONL)
+  - sessions/                     # example session JSON files
+  - docs/                         # archived and original markdown files
+    - original-md/                # backups of the original .md files
+  - electron-main/                # Main-process code (Electron entry, IPC, services)
+    - main.js                     # Electron main entry (window lifecycle)
+    - preload.js                  # preload script exposing `window.visor` APIs
+    - instruction.md
+    - step.md
+    - ipc/                        # IPC channel handlers
+      - chatIPC.js                # chat IPC handlers
+      - overlayIPC.js             # overlay IPC handlers
+    - llm/                        # LLM client, prompts, and parser
+      - client.js                 # wraps OpenRouter calls (dynamic import for ESM)
+      - parser.js                 # extracts and validates JSON from LLM responses
+      - prompts.js                # system prompt templates and strict output contract
+    - services/                   # core services used by the main process
+      - screenCapture.js          # captures screenshots (platform fallbacks)
+      - stepController.js         # session orchestration and verification flow
+      - storage.js                # persistent storage (legacy & structured modes)
+      - screenCapture/            # per-OS capture implementations
+        - darwin.js               # macOS-specific capture glue
+        - win32.js                # Windows-specific capture glue
+    - windows/                    # helpers to create app windows
+      - chatWindow.js
+      - overlayWindow.js
+      - splashWindow.js
+    - electron-mainTEST.js       # test harness for main process (dev use)
+  - renderer/                     # front-end code compiled with Vite / React
+    - vite.config.ts
+    - chatbox/                    # UI for chat-driven goal submission
+      - chat.html
+      - chat.css
+      - chat.tsx
+      - ChatApp.tsx
+      - components/               # chatbox components (header, input, messages)
+    - overlay/                    # overlay UI (annotations + annotation layer)
+      - index.html
+      - main.tsx
+      - OverlayApp.tsx
+      - AnnotationLayer.tsx
+      - drawing/                  # drawing primitives and renderer utils
+        - arrow.ts
+        - circle.ts
+        - rendererUtils.ts
+        - tooltip.ts
+    - splash/                     # splash screen UI and animation assets
+      - splash.html
+      - splash.js
+      - splash.css
+    - src/                        # alternative renderer source (legacy / experiments)
+      - main/
+        - main.ts
+        - preload.ts
+      - renderer/
+        - App.tsx
+        - index.tsx
+        - styles.css
+  - scripts/                      # build, test, diagnostics helpers
+    - build.js
+    - packageApp.js
+    - diagnoseTLM.js
+    - testServices.js
+    - testServicesUnit.js
+    - testOverlay.js
+    - testLLM.js
+  - test-data-temp/               # temporary test JSON inputs and mocks
+  - test-splash.js                # splash test harness
+  - verify-services.js            # quick service verification runner
+
+Notes:
+- Some files and folders may contain legacy or experimental code (see `renderer/src/` and `electron-mainTEST.js`).
+- Key working area for LLM behaviour and parsing: `electron-main/llm/` (update `prompts.js` and `parser.js` together).
+- Core runtime services and most patch work happen under `electron-main/services/`.
+
+If you want I can expand any folder entry with more granular file comments or produce a machine-parsable JSON tree for other tooling.

@@ -9,7 +9,6 @@
  */
 
 require('dotenv').config();
-const { OpenRouter } = require('@openrouter/sdk');
 
 const DEFAULT_MODEL = process.env.OPENROUTER_MODEL || 'openai/gpt-4o';
 //const PREFERRED_PROVIDER = process.env.OPENROUTER_PREFERRED_PROVIDER || 'OpenAI';
@@ -35,7 +34,7 @@ async function sendCompletion({
   screenshotBase64,
   extras = {}
 } = {}) {
-  const client = getOpenRouterClient();
+  const client = await getOpenRouterClient();
   const messages = buildMessages({ systemPrompt, userGoal, screenshotBase64, extras });
   const response = await client.chat.send({
     model: DEFAULT_MODEL,
@@ -103,15 +102,16 @@ module.exports = {
   _buildMessages: buildMessages
 };
 
-function getOpenRouterClient() {
+async function getOpenRouterClient() {
   if (!openRouterClient) {
     const apiKey = process.env.OPENROUTER_API_KEY;
     if (!apiKey) {
       throw new Error('OPENROUTER_API_KEY not set in environment');
     }
-    openRouterClient = new OpenRouter({
-      apiKey
-    });
+    // Dynamic import for ESM-only packages when running under CommonJS
+    const mod = await import('@openrouter/sdk');
+    const OpenRouter = mod?.OpenRouter || mod?.default || mod;
+    openRouterClient = new OpenRouter({ apiKey });
   }
   return openRouterClient;
 }

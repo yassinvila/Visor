@@ -153,67 +153,68 @@ function parseStepResponse(rawResponse) {
     };
   }
 
-  // Normalize bbox: accept [x,y,width,height], [x1,y1,x2,y2], or object with x2/y2
-  function normalizeBBox(b) {
-    if (!b) return null;
-    // Array form
-    if (Array.isArray(b) && b.length === 4) {
-      let [a, b2, c, d] = b.map(Number);
-      // Heuristic: if c or d > 1 OR a+c > 1 OR b2+d > 1, treat as bottom-right
-      const looksLikeBR = (c > 1 || d > 1) || (a <= 1 && b2 <= 1 && (a + c > 1 || b2 + d > 1));
-      if (looksLikeBR) {
-        const x1 = a, y1 = b2, x2 = c, y2 = d;
-        const x = Math.min(x1, x2);
-        const y = Math.min(y1, y2);
-        const width = Math.abs(x2 - x1);
-        const height = Math.abs(y2 - y1);
-        return { x, y, width, height };
-      }
-      return { x: a, y: b2, width: c, height: d };
-    }
-    // Object form
-    if (typeof b === 'object' && b !== null) {
-      // If x2/y2 exist, convert to width/height
-      const hasX2 = typeof b.x2 === 'number' && typeof b.y2 === 'number';
-      if (hasX2) {
-        const x = Number(b.x), y = Number(b.y);
-        const x2 = Number(b.x2), y2 = Number(b.y2);
-        return {
-          x: Math.min(x, x2),
-          y: Math.min(y, y2),
-          width: Math.abs(x2 - x),
-          height: Math.abs(y2 - y)
-        };
-      }
-      // Assume already width/height
-      return {
-        x: Number(b.x),
-        y: Number(b.y),
-        width: Number(b.width),
-        height: Number(b.height)
-      };
-    }
-    return null;
+  // If the LLM returned an explicit error payload, honor that first
+  if (json && (json.error === true || json.error === 'true' || json.status === 'error')) {
+    return {
+      error: true,
+      reason: json.reason || 'Unable to determine next step'
+    };
   }
 
-  if (json && json.bbox) {
-    json.bbox = normalizeBBox(json.bbox);
+  // STRICT BBOX HANDLING: Expect an array [x0, y0, x1, y1] with normalized coords 0..1
+  if (!json || typeof json !== 'object') {
+    return {
+      error: true,
+      reason: 'Parsed JSON is not an object'
+    };
   }
 
-  // Clamp and repair boxes into [0,1] and ensure minimal size
-  if (json && json.bbox) {
-    let { x, y, width, height } = json.bbox;
-    x = Number.isFinite(x) ? x : 0;
-    y = Number.isFinite(y) ? y : 0;
-    width = Number.isFinite(width) ? width : 0.0001;
-    height = Number.isFinite(height) ? height : 0.0001;
-    x = Math.max(0, Math.min(1, x));
-    y = Math.max(0, Math.min(1, y));
-    // Fit box into viewport
-    width = Math.max(0.0001, Math.min(1 - x, width));
-    height = Math.max(0.0001, Math.min(1 - y, height));
-    json.bbox = { x, y, width, height };
+  if (!('bbox' in json)) {
+    return {
+      error: true,
+      reason: 'Missing required "bbox" field; expected array [x0,y0,x1,y1]'
+    };
   }
+
+  const b = json.bbox;
+  if (!Array.isArray(b) || b.length !== 4) {
+    return {
+      error: true,
+      reason: 'Invalid bbox format: expected an array of four numbers [x0,y0,x1,y1]'
+    };
+  }
+
+  const nums = b.map(Number);
+  if (nums.some(n => !Number.isFinite(n))) {
+    return {
+      error: true,
+      reason: `BBox entries must be finite numbers. Got: ${b}`
+    };
+  }
+
+  const [x0, y0, x1, y1] = nums;
+  // Ensure normalized range
+  if ([x0, y0, x1, y1].some(v => v < 0 || v > 1)) {
+    return {
+      error: true,
+      reason: `BBox values must be in range [0,1]. Got: [${nums.join(', ')}]`
+    };
+  }
+
+  // Ensure ordering
+  if (!(x0 < x1 && y0 < y1)) {
+    return {
+      error: true,
+      reason: `BBox coordinates must satisfy x0 < x1 and y0 < y1. Got: [${nums.join(', ')}]`
+    };
+  }
+
+  // Convert to internal x,y,width,height form
+  const x = x0;
+  const y = y0;
+  const width = x1 - x0;
+  const height = y1 - y0;
+  json.bbox = { x, y, width, height };
 
   // Normalize shape casing
   if (json && json.shape && typeof json.shape === 'string') {

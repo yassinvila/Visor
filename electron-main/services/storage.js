@@ -329,6 +329,25 @@ async function loadChatHistory(sessionId, limit = 50) {
   }
 }
 
+// Clear chat history
+async function clearChatHistory() {
+  if (USE_STRUCTURED_LOGS) {
+    try {
+      const files = await fsPromises.readdir(LOGS_DIR);
+      const chatFiles = files.filter(f => f.startsWith('chat-') && f.endsWith('.jsonl'));
+      await Promise.all(
+        chatFiles.map(f => fsPromises.unlink(path.join(LOGS_DIR, f)).catch(() => {}))
+      );
+      return true;
+    } catch (e) {
+      return false;
+    }
+  } else {
+    await writeJSON('chat', []);
+    return true;
+  }
+}
+
 // Settings
 async function saveSettings(obj) {
   const current = await readJSON('settings', {});
@@ -345,6 +364,7 @@ async function loadSettings() {
 // Errors (append-only)
 async function logError(error) {
   const entry = {
+    id: (error && error.id) || `e_${Date.now()}`,
     timestamp: getTimestamp(),
     message: error.message || String(error),
     stack: error.stack || null,
@@ -483,6 +503,7 @@ module.exports = {
   loadStepLogs,
   saveChatMessage,
   loadChatHistory,
+  clearChatHistory,
   saveSettings,
   loadSettings,
   logError,

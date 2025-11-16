@@ -6,7 +6,8 @@
 //   - 'chat:history' — renderer requests chat message history
 //     Returns: Promise<Array> of message objects
 
-const { ipcMain } = require('electron');
+const { ipcMain, BrowserWindow } = require('electron');
+const storage = require('../services/storage');
 
 /**
  * Register chat IPC handlers.
@@ -35,6 +36,17 @@ function registerChatIPC({ onMessageSend, onLoadHistory }) {
     } catch (error) {
       console.error('Error loading chat history:', error);
       return [];
+    }
+  });
+
+  // 'chat:clear' — renderer requests to clear chat history
+  ipcMain.handle('chat:clear', async () => {
+    try {
+      await storage.clearChatHistory();
+      return { ok: true };
+    } catch (error) {
+      console.error('Error clearing chat history:', error);
+      return { ok: false, error: String(error?.message || error) };
     }
   });
 }

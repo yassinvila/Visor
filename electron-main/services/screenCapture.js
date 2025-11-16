@@ -59,7 +59,8 @@ function createMockCapture() {
     height,
     format: buf ? 'png' : 'png',
     timestamp: Date.now(),
-    mockData: true
+    mockData: true,
+    devicePixelRatio: 1
   };
 }
 
@@ -79,12 +80,22 @@ async function captureUsingPlatformModule() {
         const res = await platformModule.captureCurrentScreen();
         // Ensure result matches CaptureResult shape
         if (res && res.imageBuffer) {
-          // If width/height missing, infer from laptop version
+          // If width/height missing, try to infer from image buffer
           if (!res.width || !res.height) {
-            const inferred = inferResolutionFromLaptopVersion();
-            res.width = res.width || inferred.width;
-            res.height = res.height || inferred.height;
+            try {
+              const sizeOf = require('image-size');
+              const dims = sizeOf(res.imageBuffer);
+              if (dims && dims.width && dims.height) {
+                res.width = res.width || dims.width;
+                res.height = res.height || dims.height;
+              }
+            } catch (_) {
+              const inferred = inferResolutionFromLaptopVersion();
+              res.width = res.width || inferred.width;
+              res.height = res.height || inferred.height;
+            }
           }
+          res.devicePixelRatio = res.devicePixelRatio || res.scale || 1;
           res.mockData = false;
           return res;
         }
@@ -105,15 +116,24 @@ async function captureWithFallbacks() {
   try {
     const takeScreenshot = require('screenshot-desktop');
     const imageBuffer = await takeScreenshot();
-    // If the library returns a buffer, infer resolution from env mapping as fallback
-    const { width, height } = inferResolutionFromLaptopVersion();
+    // Try to determine actual dimensions from buffer if possible
+    let width, height;
+    try {
+      const sizeOf = require('image-size');
+      const dims = sizeOf(imageBuffer);
+      width = dims.width; height = dims.height;
+    } catch (e) {
+      const inferred = inferResolutionFromLaptopVersion();
+      width = inferred.width; height = inferred.height;
+    }
     return {
       imageBuffer,
       width,
       height,
       format: 'png',
       timestamp: Date.now(),
-      mockData: false
+      mockData: false,
+      devicePixelRatio: 1
     };
   } catch (e) {
     // Not available or failed — we'll fall back to mock below
@@ -200,14 +220,24 @@ async function loadDemoImage(imagePath) {
     const imageBuffer = fs.readFileSync(resolvedPath);
     const ext = path.extname(resolvedPath).toLowerCase().slice(1);
     const format = ['png', 'jpg', 'jpeg', 'gif'].includes(ext) ? ext : 'png';
-    const { width, height } = inferResolutionFromLaptopVersion();
+    // Attempt to infer dimensions from the demo image buffer
+    let width, height;
+    try {
+      const sizeOf = require('image-size');
+      const dims = sizeOf(imageBuffer);
+      width = dims.width; height = dims.height;
+    } catch (_) {
+      const inferred = inferResolutionFromLaptopVersion();
+      width = inferred.width; height = inferred.height;
+    }
     return {
       imageBuffer,
       width,
       height,
       format,
       timestamp: Date.now(),
-      mockData: true
+      mockData: true,
+      devicePixelRatio: 1
     };
   } catch (error) {
     console.error('loadDemoImage error:', error.message);

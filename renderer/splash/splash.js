@@ -6,6 +6,7 @@ const whiteBox = document.getElementById('white-box');
 const visorText = document.getElementById('visor-text');
 const revealCircle = document.getElementById('reveal-circle');
 const bezelFrame = document.getElementById('bezel-frame');
+const loadingSpinner = document.querySelector('.loading-spinner');
 
 // Animation sequence timing (in milliseconds) - tightened for snappier feel
 const TIMING = {
@@ -47,37 +48,44 @@ function startSplashSequence() {
     return;
   }
 
+  // Debugging: Log when animation classes are applied
+  console.log('[Splash] Starting splash sequence');
+
   // Step 0: Expand bezel from center (starts immediately)
   setTimeout(() => {
+    console.log('[Splash] Applying bezel-visible class');
     bezelFrame.classList.add('bezel-visible');
   }, TIMING.BEZEL_START);
 
   // Step 1: Expand the white box (while bezel is expanding)
   setTimeout(() => {
+    console.log('[Splash] Applying expanding class to whiteBox');
     whiteBox.classList.add('expanding');
   }, 200);
 
   // Step 2: Fade in VISOR text at 1.7s
   setTimeout(() => {
+    console.log('[Splash] Applying fade-in-text class to visorText');
     visorText.classList.add('fade-in-text');
   }, TIMING.TEXT_START);
 
   // Step 3: Fade out VISOR text (after 1 second display)
   setTimeout(() => {
+    console.log('[Splash] Applying fade-out-text class to visorText');
     visorText.classList.remove('fade-in-text');
     visorText.classList.add('fade-out-text');
   }, TIMING.TEXT_START + TIMING.TEXT_FADE_IN + TIMING.TEXT_DISPLAY);
 
   // Step 4: Start the reveal - transparency comes from edges inward
   setTimeout(() => {
-    // Drive reveal via CSS variable animation on #white-box
+    console.log('[Splash] Applying reveal-expanding class to whiteBox');
     whiteBox.style.setProperty('--reveal-duration', `${TIMING.REVEAL_EXPAND}ms`);
     whiteBox.classList.add('reveal-expanding');
   }, TIMING.REVEAL_START);
 
   // Step 5: Fade out bezel as reveal completes
   setTimeout(() => {
-    // Outward fade (scale up + fade) for the bezel frame
+    console.log('[Splash] Applying bezel-fade-out class');
     bezelFrame.classList.add('bezel-fade-out');
   }, TIMING.REVEAL_START + Math.max(0, TIMING.REVEAL_EXPAND - 800));
 
@@ -94,6 +102,11 @@ function startSplashSequence() {
     if (window.visor && window.visor.splash && window.visor.splash.complete) {
       window.visor.splash.complete();
     }
+  }, TIMING.TOTAL_DURATION);
+
+  // Hide loading spinner when the animation completes
+  setTimeout(() => {
+    loadingSpinner.style.display = 'none';
   }, TIMING.TOTAL_DURATION);
 }
 

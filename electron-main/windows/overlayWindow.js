@@ -35,6 +35,13 @@ function createOverlayWindow() {
 
   win.setIgnoreMouseEvents(true, { forward: true });
 
+  // Keep overlay always-on-top but at a lower level than chat
+  try {
+    if (typeof win.setAlwaysOnTop === 'function') {
+      win.setAlwaysOnTop(true, 'floating');
+    }
+  } catch (_) {}
+
   const testFile = process.env.VISOR_OVERLAY_TEST_FILE;
 
   if (testFile && fs.existsSync(testFile)) {

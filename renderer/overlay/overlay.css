@@ -6,8 +6,8 @@
 body {
   margin: 0;
   padding: 0;
-  /* add slight dark glass behind the overlay window itself so changes are visible immediately */
-  background: linear-gradient(180deg, rgba(8, 10, 16, 0.22), rgba(8, 10, 16, 0.28));
+  /* Keep the overlay truly transparent so desktop shows through */
+  background: transparent;
   overflow: hidden;
 }
 
@@ -22,27 +22,17 @@ body {
   padding: 32px;
 }
 
-.overlay-shell::after {
-  content: '';
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  background:
-    radial-gradient(1200px 800px at 20% 10%, rgba(255, 255, 255, 0.10), transparent 60%),
-    linear-gradient(135deg, rgba(8, 10, 16, 0.50), rgba(8, 10, 16, 0.75));
-  backdrop-filter: blur(8px) saturate(125%);
-  z-index: 0;
-}
+/* Remove any global darkening veils; only elements should paint */
 
 .overlay-card {
   width: 320px;
   border-radius: 24px;
   padding: 20px;
-  background: rgba(8, 10, 16, 0.97);
-  backdrop-filter: blur(36px) saturate(190%);
+  background: rgba(8, 10, 16, 0.55);
+  backdrop-filter: blur(22px) saturate(160%);
   box-shadow:
     0 18px 40px rgba(0, 0, 0, 0.7),
-    0 0 0 0.5px rgba(255, 255, 255, 0.18);
+    0 0 0 0.5px rgba(255, 255, 255, 0.14);
   pointer-events: auto;
   display: flex;
   flex-direction: column;

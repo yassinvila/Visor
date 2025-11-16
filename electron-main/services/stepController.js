@@ -14,6 +14,146 @@ const path = require('path');
 const { sendCompletion } = require('../llm/client');
 const { parseStepResponse } = require('../llm/parser');
 const storage = require('./storage');
+const { existsSync } = require('fs');
+
+// Optional click executor module (if present in repo/environment)
+let clickExecutor = null;
+try {
+  const executorPath = path.join(__dirname, 'clickExecutor.js');
+  if (fs.existsSync(executorPath)) {
+    clickExecutor = require(executorPath);
+  }
+} catch (_) {
+  clickExecutor = null;
+}
+
+// Helper: convert normalized bbox {x,y,width,height} to pixel bbox {x,y,width,height}
+function toPixels(normBBox, { width, height }) {
+  const x = Math.max(0, Math.min(1, Number(normBBox.x || 0)));
+  const y = Math.max(0, Math.min(1, Number(normBBox.y || 0)));
+  const w = Math.max(0, Math.min(1 - x, Number(normBBox.width || 0)));
+  const h = Math.max(0, Math.min(1 - y, Number(normBBox.height || 0)));
+  return {
+    x: Math.round(x * width),
+    y: Math.round(y * height),
+    width: Math.max(1, Math.round(w * width)),
+    height: Math.max(1, Math.round(h * height))
+  };
+}
+
+// Helper: naive crop using pngjs/jpeg-js when available; returns pixel array {data, width, height}
+function crop(imageBuffer, pixelBbox) {
+  try {
+    // Try PNG
+    const PNG = require('pngjs').PNG;
+    const png = PNG.sync.read(imageBuffer);
+    const { width: imgW, height: imgH, data } = png;
+    const sx = Math.max(0, Math.min(imgW - 1, pixelBbox.x));
+    const sy = Math.max(0, Math.min(imgH - 1, pixelBbox.y));
+    const sw = Math.max(1, Math.min(imgW - sx, pixelBbox.width));
+    const sh = Math.max(1, Math.min(imgH - sy, pixelBbox.height));
+    const out = Buffer.alloc(sw * sh * 4);
+    let idx = 0;
+    for (let row = 0; row < sh; row++) {
+      const srcRow = sy + row;
+      for (let col = 0; col < sw; col++) {
+        const srcCol = sx + col;
+        const srcIdx = (srcRow * imgW + srcCol) * 4;
+        out[idx++] = data[srcIdx];
+        out[idx++] = data[srcIdx + 1];
+        out[idx++] = data[srcIdx + 2];
+        out[idx++] = data[srcIdx + 3];
+      }
+    }
+    return { data: out, width: sw, height: sh, channels: 4 };
+  } catch (e) {
+    // Try JPEG
+    try {
+      const jpeg = require('jpeg-js');
+      const decoded = jpeg.decode(imageBuffer, { useTArray: true });
+      const imgW = decoded.width, imgH = decoded.height, data = decoded.data;
+      const sx = Math.max(0, Math.min(imgW - 1, pixelBbox.x));
+      const sy = Math.max(0, Math.min(imgH - 1, pixelBbox.y));
+      const sw = Math.max(1, Math.min(imgW - sx, pixelBbox.width));
+      const sh = Math.max(1, Math.min(imgH - sy, pixelBbox.height));
+      const out = Buffer.alloc(sw * sh * 4);
+      let idx = 0;
+      for (let row = 0; row < sh; row++) {
+        const srcRow = sy + row;
+        for (let col = 0; col < sw; col++) {
+          const srcCol = sx + col;
+          const srcIdx = (srcRow * imgW + srcCol) * 4;
+          out[idx++] = data[srcIdx];
+          out[idx++] = data[srcIdx + 1];
+          out[idx++] = data[srcIdx + 2];
+          out[idx++] = data[srcIdx + 3] ?? 255;
+        }
+      }
+      return { data: out, width: sw, height: sh, channels: 4 };
+    } catch (err) {
+      // Fallback: cannot crop, return null
+      return null;
+    }
+  }
+}
+
+// Helper: compute mean absolute per-channel diff between two cropped buffers
+function pixelDelta(cropA, cropB) {
+  try {
+    if (!cropA || !cropB) return Number.MAX_VALUE;
+    if (cropA.width !== cropB.width || cropA.height !== cropB.height) return Number.MAX_VALUE;
+    const a = cropA.data;
+    const b = cropB.data;
+    if (!a || !b || a.length !== b.length) return Number.MAX_VALUE;
+    let sum = 0;
+    for (let i = 0; i < a.length; i++) {
+      sum += Math.abs(a[i] - b[i]);
+    }
+    const mean = sum / a.length; // 0..255
+    return mean / 255; // normalize to 0..1
+  } catch (e) {
+    return Number.MAX_VALUE;
+  }
+}
+
+// Helper: compute snap point (center with optional small contrast-based nudge)
+function snapPoint(pixelBbox, imageBuffer) {
+  const cx = Math.round(pixelBbox.x + pixelBbox.width / 2);
+  const cy = Math.round(pixelBbox.y + pixelBbox.height / 2);
+  // Best-effort: if we can decode the image, look for the highest local contrast within a 9x9 patch
+  try {
+    const cropBox = {
+      x: Math.max(0, cx - 4),
+      y: Math.max(0, cy - 4),
+      width: Math.min(pixelBbox.width, 9),
+      height: Math.min(pixelBbox.height, 9)
+    };
+    const patch = crop(imageBuffer, cropBox);
+    if (!patch) return { x: cx, y: cy };
+    // Find pixel with max local gradient (rough heuristic)
+    let best = { x: cx, y: cy, score: -1 };
+    const { width: pw, height: ph, data } = patch;
+    for (let ry = 0; ry < ph; ry++) {
+      for (let rx = 0; rx < pw; rx++) {
+        const idx = (ry * pw + rx) * 4;
+        const r = data[idx], g = data[idx + 1], b = data[idx + 2];
+        // brightness
+        const bright = 0.299 * r + 0.587 * g + 0.114 * b;
+        // compute simple local contrast compared to center
+        const centerIdx = Math.floor((ph / 2) * pw + Math.floor(pw / 2)) * 4;
+        const cr = data[centerIdx], cg = data[centerIdx + 1], cb = data[centerIdx + 2];
+        const cbright = 0.299 * cr + 0.587 * cg + 0.114 * cb;
+        const score = Math.abs(bright - cbright);
+        if (score > best.score) {
+          best = { x: cropBox.x + rx, y: cropBox.y + ry, score };
+        }
+      }
+    }
+    return { x: best.x, y: best.y };
+  } catch (e) {
+    return { x: cx, y: cy };
+  }
+}
 
 // Internal state for the current session
 const state = {
@@ -171,6 +311,80 @@ async function requestNextStep() {
       throw new Error(`Parser error: ${parsedStep.reason}`);
     }
 
+    // SMALL ACCURACY UPGRADE: Convert normalized bbox -> pixels, snap, click and verify by comparing
+    // a tight crop before/after. Retry once with expanded bbox if change is below threshold.
+    try {
+      if (parsedStep.bbox && screenshot && screenshot.imageBuffer) {
+        const viewport = { width: Number(screenshot.width) || 1, height: Number(screenshot.height) || 1 };
+        const pixelBbox = toPixels(parsedStep.bbox, viewport);
+
+        // Compute initial crop and target point
+        const beforeCrop = crop(screenshot.imageBuffer, pixelBbox);
+        const target = snapPoint(pixelBbox, screenshot.imageBuffer);
+
+        // Execute click via optional executor if available
+        try {
+          if (clickExecutor && typeof clickExecutor.clickAt === 'function') {
+            await clickExecutor.clickAt(target.x, target.y);
+          } else {
+            // No executor available; log intent for manual verification
+            console.log('[StepController] No click executor available; would click at', target);
+          }
+        } catch (clickErr) {
+          console.warn('Click executor failed:', clickErr?.message || clickErr);
+        }
+
+        // Re-capture and compute delta
+        const reCapture = await screenCapture.captureCurrentScreen();
+        const afterCrop = reCapture ? crop(reCapture.imageBuffer, pixelBbox) : null;
+        const delta = pixelDelta(beforeCrop, afterCrop);
+        const PIXEL_DELTA_THRESHOLD = 0.012; // mean abs diff per channel (0..1)
+
+        if (delta !== Number.MAX_VALUE && delta < PIXEL_DELTA_THRESHOLD) {
+          // Retry once with ~12% expansion of bbox
+          const expandFactor = 1.12;
+          const ex = Math.round(pixelBbox.width * (expandFactor - 1) / 2);
+          const ey = Math.round(pixelBbox.height * (expandFactor - 1) / 2);
+          const expanded = {
+            x: Math.max(0, pixelBbox.x - ex),
+            y: Math.max(0, pixelBbox.y - ey),
+            width: Math.min(viewport.width, pixelBbox.width + ex * 2),
+            height: Math.min(viewport.height, pixelBbox.height + ey * 2)
+          };
+
+          const target2 = snapPoint(expanded, reCapture?.imageBuffer || screenshot.imageBuffer);
+          try {
+            if (clickExecutor && typeof clickExecutor.clickAt === 'function') {
+              await clickExecutor.clickAt(target2.x, target2.y);
+            } else {
+              console.log('[StepController] Retry click (no executor):', target2);
+            }
+          } catch (clickErr) {
+            console.warn('Retry click executor failed:', clickErr?.message || clickErr);
+          }
+
+          const reCapture2 = await screenCapture.captureCurrentScreen();
+          const afterCrop2 = reCapture2 ? crop(reCapture2.imageBuffer, pixelBbox) : null;
+          const delta2 = pixelDelta(beforeCrop, afterCrop2);
+
+          if (delta2 === Number.MAX_VALUE || delta2 < PIXEL_DELTA_THRESHOLD) {
+            // Failed to observe meaningful change — emit structured error and abort flow for this step
+            const err = new Error('Click did not produce a detectable change in the target region');
+            err.code = 'CLICK_NO_DELTA';
+            err.delta = delta2 === Number.MAX_VALUE ? null : delta2;
+            // Send to onError and discontinue advancing this step
+            state.status = 'error';
+            callbacks.onError?.(err);
+            state.isFetching = false;
+            return;
+          }
+        }
+      }
+    } catch (verifyErr) {
+      console.warn('Verification flow failed (non-fatal):', verifyErr?.message || verifyErr);
+      // Do not abort the whole step on verification helper errors — continue to normal flow
+    }
+
     // Assign a unique ID if not present
     if (!parsedStep.id) {
       parsedStep.id = `step_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
@@ -316,8 +530,16 @@ function attachScreenshotMetadata(step, screenshot) {
     return step;
   }
 
-  const width = Number(screenshot.width) || 1;
-  const height = Number(screenshot.height) || 1;
+  // Physical image dimensions (pixels)
+  const rawWidth = Number(screenshot.width) || 1;
+  const rawHeight = Number(screenshot.height) || 1;
+  // Device pixel ratio reported by capture (or fallback to 1)
+  const dpr = Number(screenshot.devicePixelRatio || screenshot.scale || 1) || 1;
+
+  // Convert to CSS viewport dimensions so renderer's window.innerWidth/innerHeight
+  // (which are in CSS pixels) can be used to map annotations accurately.
+  const cssWidth = Math.max(1, Math.round(rawWidth / dpr));
+  const cssHeight = Math.max(1, Math.round(rawHeight / dpr));
 
   const toPixels = (value, size) => {
     const numeric = Number(value);
@@ -325,12 +547,13 @@ function attachScreenshotMetadata(step, screenshot) {
     return Math.max(0, numeric) * size;
   };
 
+  // bboxPixels are expressed in CSS pixels (not raw physical pixels)
   const bboxPixels = step.bbox
     ? {
-        x: toPixels(step.bbox.x, width),
-        y: toPixels(step.bbox.y, height),
-        width: toPixels(step.bbox.width, width),
-        height: toPixels(step.bbox.height, height)
+        x: toPixels(step.bbox.x, cssWidth),
+        y: toPixels(step.bbox.y, cssHeight),
+        width: toPixels(step.bbox.width, cssWidth),
+        height: toPixels(step.bbox.height, cssHeight)
       }
     : null;
 
@@ -338,13 +561,15 @@ function attachScreenshotMetadata(step, screenshot) {
     ...step,
     bboxPixels,
     viewport: {
-      width,
-      height,
-      devicePixelRatio: screenshot.devicePixelRatio || screenshot.scale || 1
+      width: cssWidth,
+      height: cssHeight,
+      devicePixelRatio: dpr,
+      rawWidth,
+      rawHeight
     },
     screenshotMeta: {
-      width,
-      height,
+      width: rawWidth,
+      height: rawHeight,
       timestamp: screenshot.timestamp,
       mock: Boolean(screenshot.mockData)
     }

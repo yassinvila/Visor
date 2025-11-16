@@ -25,6 +25,14 @@ function createChatWindow() {
     }
   });
 
+  // Ensure chat stays above overlay across platforms
+  try {
+    if (typeof win.setAlwaysOnTop === 'function') {
+      // Use a high-priority level when supported
+      win.setAlwaysOnTop(true, 'screen-saver');
+    }
+  } catch (_) {}
+
   if (isDev) {
     win.loadURL('http://localhost:5173/chatbox/chat.html');
   } else {

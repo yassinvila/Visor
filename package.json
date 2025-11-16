@@ -4,16 +4,17 @@
   "version": "0.1.0",
   "main": "electron-main/main.js",
   "scripts": {
+    "prestart": "vite build --config renderer/vite.config.ts",
     "start": "electron .",
     "renderer:dev": "vite --config renderer/vite.config.ts",
     "renderer:build": "vite build --config renderer/vite.config.ts",
     "renderer:preview": "vite preview --config renderer/vite.config.ts",
+    "dev": "cross-env VISOR_DEV_SERVER=true concurrently -n vite,electron \"vite --config renderer/vite.config.ts\" \"electron .\"",
     "refresh:icon": "node scripts/refreshAppIcon.js"
   },
   "dependencies": {
     "@openrouter/sdk": "^0.1.11",
     "dotenv": "^17.2.3",
-    "electron": "^39.2.0",
     "node-fetch": "^2.7.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
@@ -23,7 +24,10 @@
     "@types/react": "^18.3.12",
     "@types/react-dom": "^18.3.1",
     "@vitejs/plugin-react": "^4.3.4",
+    "electron": "^39.2.1",
     "typescript": "^5.6.3",
-    "vite": "^7.2.2"
+    "vite": "^7.2.2",
+    "concurrently": "^9.1.2",
+    "cross-env": "^7.0.3"
   }
 }
