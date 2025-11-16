@@ -10,6 +10,7 @@ const DEFAULT_VIEWPORT = {
 };
 
 export const OverlayApp: React.FC = () => {
+  const AUTO_POSITION_CARD = false; // keep card static unless user drags
   const [steps, setSteps] = useState<OverlayInstruction[]>([]);
   const [activeIndex, setActiveIndex] = useState(0);
   const [loading, setLoading] = useState(false);
@@ -75,8 +76,8 @@ export const OverlayApp: React.FC = () => {
 
         setActiveIndex(nextActiveIndex);
 
-        // Position the overlay card near the annotation if possible.
-        try {
+        // Optionally position the overlay card near the annotation (disabled by default).
+        if (AUTO_POSITION_CARD) try {
           // compute bounding box in viewport coords
           const sourceWidth = incomingStep.viewport?.width ?? viewportSize.width;
           const sourceHeight = incomingStep.viewport?.height ?? viewportSize.height;
@@ -129,10 +130,10 @@ export const OverlayApp: React.FC = () => {
             }
 
             // apply position
-              const margin = 24; // keep card away from edges
-              const finalX = Math.max(margin, Math.min(Math.round(desiredX), Math.max(margin, viewportSize.width - cardW - margin)));
-              const finalY = Math.max(margin, Math.min(Math.round(desiredY), Math.max(margin, viewportSize.height - cardH - margin)));
-              setCardPosition({ x: finalX, y: finalY });
+            const margin = 24; // keep card away from edges
+            const finalX = Math.max(margin, Math.min(Math.round(desiredX), Math.max(margin, viewportSize.width - cardW - margin)));
+            const finalY = Math.max(margin, Math.min(Math.round(desiredY), Math.max(margin, viewportSize.height - cardH - margin)));
+            setCardPosition({ x: finalX, y: finalY });
           }
         } catch (e) {
           // Ignore positioning errors — keep existing card position
