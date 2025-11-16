@@ -22,11 +22,11 @@ process.env.VISOR_DATA_PATH = TEST_DATA_PATH;
 process.env.VISOR_USE_REAL_CAPTURE = 'false'; // Use mock for tests
 
 // Import services AFTER setting env vars
-const screenCapture = require('./electron-main/services/screenCapture');
-const { parseStepResponse } = require('./electron-main/llm/parser');
-const storage = require('./electron-main/services/storage');
-const stepController = require('./electron-main/services/stepController');
-const { sendCompletion, _buildMessages } = require('./electron-main/llm/client');
+const screenCapture = require('../electron-main/services/screenCapture');
+const { parseStepResponse } = require('../electron-main/llm/parser');
+const storage = require('../electron-main/services/storage');
+const stepController = require('../electron-main/services/stepController');
+const { sendCompletion, _buildMessages } = require('../electron-main/llm/client');
 
 // Test results tracking
 const results = {
