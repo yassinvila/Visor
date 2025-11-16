@@ -99,4 +99,3 @@ function saveScreenshot(imageBuffer) {
   } catch (err) {
     console.warn('Failed to launch overlay preview from testLLM:', err.message);
   }
-})();

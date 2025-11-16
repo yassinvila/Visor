@@ -32,6 +32,7 @@ body {
   display: flex;
   flex-direction: column;
   gap: 16px;
+  z-index: 2;
 }
 
 .overlay-label {
@@ -75,4 +76,66 @@ body {
 
 .overlay-step-active {
   color: #f5faff !important;
+}
+
+.annotation-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.annotation-box,
+.annotation-circle {
+  position: absolute;
+  border: 2px solid #7bdcff;
+  box-shadow: 0 0 20px rgba(123, 220, 255, 0.45);
+  animation: pulse 2.4s ease-in-out infinite;
+}
+
+.annotation-box {
+  border-radius: 16px;
+}
+
+.annotation-circle {
+  border-radius: 999px;
+}
+
+.annotation-arrow {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.annotation-arrow path {
+  stroke: #7bdcff;
+  stroke-width: 3;
+  fill: none;
+  filter: drop-shadow(0 0 10px rgba(123, 220, 255, 0.4));
+}
+
+.annotation-label {
+  position: absolute;
+  padding: 8px 14px;
+  border-radius: 999px;
+  background: rgba(8, 10, 16, 0.92);
+  color: #f6fbff;
+  font-size: 13px;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+}
+
+@keyframes pulse {
+  0% {
+    box-shadow: 0 0 12px rgba(123, 220, 255, 0.3);
+  }
+  70% {
+    box-shadow: 0 0 28px rgba(123, 220, 255, 0.65);
+  }
+  100% {
+    box-shadow: 0 0 12px rgba(123, 220, 255, 0.3);
+  }
 }

@@ -9,11 +9,12 @@
  */
 
 require('dotenv').config();
-const fetch = require('node-fetch');
+const { OpenRouter } = require('@openrouter/sdk');
 
-const OPENROUTER_BASE_URL = 'https://openrouter.ai/api/v1';
 const DEFAULT_MODEL = process.env.OPENROUTER_MODEL || 'openai/gpt-4o-mini';
+const PREFERRED_PROVIDER = process.env.OPENROUTER_PREFERRED_PROVIDER || 'OpenAI';
 const DEFAULT_TEMPERATURE = normalizeTemperature(process.env.OPENROUTER_TEMPERATURE);
+let openRouterClient;
 
 function normalizeTemperature(value) {
   const parsed = Number(value);
@@ -34,32 +35,39 @@ async function sendCompletion({
   screenshotBase64,
   extras = {}
 } = {}) {
-  const apiKey = process.env.OPENROUTER_API_KEY;
-  if (!apiKey) {
-    throw new Error('OPENROUTER_API_KEY not set in environment');
-  }
-
+  const client = getOpenRouterClient();
   const messages = buildMessages({ systemPrompt, userGoal, screenshotBase64, extras });
 
-  const response = await fetch(`${OPENROUTER_BASE_URL}/chat/completions`, {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${apiKey}`,
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({
-      model: DEFAULT_MODEL,
-      temperature: DEFAULT_TEMPERATURE,
-      messages
-    })
+  // const requestBody = {
+  //   model: "openai/chatgpt-4o-latest",
+  //   messages: [
+  //     { role: "system", content: system },
+  //     {
+  //       role: "user",
+  //       content: [
+  //         {
+  //           type: "text",
+  //           text: `User Goal: ${userGoal}${lastStep ? `\nLast Step: ${lastStep}` : ''}\n\nPlease analyze the screenshot and provide the next step as JSON.`
+  //         },
+  //         {
+  //           type: "image_url",
+  //           image_url: { url: `data:image/png;base64,${base64Image}` }
+  //         }
+  //       ]
+  //     }
+  //   ],
+  //   temperature: 0.7,
+  //   max_tokens: 1000,
+  //   response_format: { type: "json_object" }
+  // };
+  const completion = await client.chat.send({
+    model: DEFAULT_MODEL,
+    temperature: DEFAULT_TEMPERATURE,
+    messages,
+    provider: { order: [PREFERRED_PROVIDER], include: [PREFERRED_PROVIDER], allow_fallbacks: false },
+    stream: false
   });
 
-  if (!response.ok) {
-    const errorBody = await response.text();
-    throw new Error(`OpenRouter request failed (${response.status}): ${errorBody}`);
-  }
-
-  const completion = await response.json();
   return completion?.choices?.[0]?.message?.content ?? null;
 }
 
@@ -84,14 +92,21 @@ function buildMessages({ systemPrompt, userGoal, screenshotBase64, extras }) {
     userParts.push({ type: 'text', text: `Context: ${JSON.stringify(extras)}` });
   }
 
+  // Local photos: allow data URLs and raw base64 (converted to data URL)
   if (screenshotBase64) {
-    const url = screenshotBase64.startsWith('data:')
-      ? screenshotBase64
-      : `data:image/png;base64,${screenshotBase64}`;
-    userParts.push({
-      type: 'image_url',
-      image_url: { url }
-    });
+    let url = null;
+    const input = String(screenshotBase64).trim();
+    if (/^https?:\/\//i.test(input)) {
+      url = input;
+    } else if (/^data:image\/(png|jpeg);base64,/i.test(input)) {
+      url = input;
+    } else if (/^[A-Za-z0-9+/=]+$/i.test(input)) {
+      url = `data:image/png;base64,${input}`;
+    }
+
+    if (url) {
+      userParts.push({ type: 'image_url', imageUrl: { url } });
+    }
   }
 
   if (userParts.length === 0) {
@@ -110,3 +125,16 @@ module.exports = {
   sendCompletion,
   _buildMessages: buildMessages
 };
+
+function getOpenRouterClient() {
+  if (!openRouterClient) {
+    const apiKey = process.env.OPENROUTER_API_KEY;
+    if (!apiKey) {
+      throw new Error('OPENROUTER_API_KEY not set in environment');
+    }
+    openRouterClient = new OpenRouter({
+      apiKey
+    });
+  }
+  return openRouterClient;
+}

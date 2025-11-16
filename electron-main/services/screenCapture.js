@@ -15,6 +15,7 @@
 
 const fs = require('fs');
 const path = require('path');
+require('dotenv').config();
 
 // Feature flag: allow disabling real capture for debugging.
 // Production default: real capture enabled unless explicitly disabled.
@@ -38,34 +39,25 @@ function inferResolutionFromLaptopVersion() {
 // MOCK CAPTURE (Fallback)
 // ============================================================================
 
-function generateMockPNG() {
-  // Minimal PNG header (1x1 transparent pixel)
-  return Buffer.from([
-    0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a,
-    0x00, 0x00, 0x00, 0x0d,
-    0x49, 0x48, 0x44, 0x52,
-    0x00, 0x00, 0x00, 0x01,
-    0x00, 0x00, 0x00, 0x01,
-    0x08, 0x02, 0x00, 0x00, 0x00,
-    0x90, 0x77, 0x53, 0xde,
-    0x00, 0x00, 0x00, 0x0c,
-    0x49, 0x44, 0x41, 0x54,
-    0x08, 0x99, 0x01, 0x01, 0x00, 0x00, 0xfe, 0xff,
-    0x00, 0x00, 0x00, 0x02, 0x00, 0x01,
-    0x49, 0xb4, 0xe8, 0xb7,
-    0x00, 0x00, 0x00, 0x00,
-    0x49, 0x45, 0x4e, 0x44,
-    0xae, 0x42, 0x60, 0x82
-  ]);
+function loadMockImageBuffer() {
+  try {
+    const root = path.resolve(__dirname, '..', '..');
+    const pngPath = path.join(root, 'assets', 'icons', 'appIcon.png');
+    const jpgPath = path.join(root, 'assets', 'icons', 'appIcon.jpg');
+    if (fs.existsSync(pngPath)) return fs.readFileSync(pngPath);
+    if (fs.existsSync(jpgPath)) return fs.readFileSync(jpgPath);
+  } catch (_) {}
+  return null;
 }
 
 function createMockCapture() {
   const { width, height } = inferResolutionFromLaptopVersion();
+  const buf = loadMockImageBuffer();
   return {
-    imageBuffer: generateMockPNG(),
+    imageBuffer: buf || Buffer.alloc(0),
     width,
     height,
-    format: 'png',
+    format: buf ? 'png' : 'png',
     timestamp: Date.now(),
     mockData: true
   };

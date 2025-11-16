@@ -1,3 +1,4 @@
+const fs = require('fs');
 const path = require('path');
 const { BrowserWindow, screen } = require('electron');
 
@@ -34,7 +35,11 @@ function createOverlayWindow() {
 
   win.setIgnoreMouseEvents(true, { forward: true });
 
-  if (isDev) {
+  const testFile = process.env.VISOR_OVERLAY_TEST_FILE;
+
+  if (testFile && fs.existsSync(testFile)) {
+    win.loadFile(testFile);
+  } else if (isDev) {
     win.loadURL('http://localhost:5173/overlay/index.html');
   } else {
     win.loadFile(path.join(__dirname, '..', '..', 'dist', 'overlay', 'index.html'));

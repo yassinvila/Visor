@@ -1,0 +1,13 @@
+{
+  "step_description": "Click the green Spotify icon in the dock at the bottom of the screen to open the Spotify app.",
+  "shape": "circle",
+  "bbox": {
+    "x": 0.458,
+    "y": 0.935,
+    "width": 0.034,
+    "height": 0.056
+  },
+  "label": "Open Spotify",
+  "is_final_step": false
+}
+

@@ -153,6 +153,22 @@ function parseStepResponse(rawResponse) {
     };
   }
 
+  // Normalize common variations: allow bbox as array [x,y,width,height]
+  if (json && json.bbox && Array.isArray(json.bbox) && json.bbox.length === 4) {
+    const [x, y, width, height] = json.bbox.map(Number);
+    json.bbox = { x, y, width, height };
+  }
+
+  // Normalize shape casing
+  if (json && json.shape && typeof json.shape === 'string') {
+    json.shape = json.shape.toLowerCase();
+  }
+
+  // Default is_final_step if missing
+  if (json && json.is_final_step === undefined) {
+    json.is_final_step = false;
+  }
+
   // Validate schema
   const validation = validateStepSchema(json);
   

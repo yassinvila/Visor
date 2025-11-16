@@ -1,42 +1,36 @@
 import type { CSSProperties } from 'react';
-import type { AnnotationConfig, GuidanceStep } from '../types';
+import type { AnnotationConfig, AnnotationType, BoundingBox } from '../types';
 import { circleStyle } from './circle';
 import { buildArrowPath } from './arrow';
-import { tooltipStyle } from './tooltip';
 
-export function buildAnnotationConfig(step: GuidanceStep): AnnotationConfig {
+export function buildAnnotationConfig(shape: AnnotationType, target: BoundingBox): AnnotationConfig {
   const baseBox: CSSProperties = {
-    left: `${step.target.x}px`,
-    top: `${step.target.y}px`,
-    width: `${step.target.width}px`,
-    height: `${step.target.height}px`
+    left: `${target.x}px`,
+    top: `${target.y}px`,
+    width: `${target.width}px`,
+    height: `${target.height}px`
   };
 
-  if (step.annotation === 'circle') {
+  if (shape === 'circle') {
     return {
-      type: step.annotation,
-      boxStyle: circleStyle(step.target)
+      type: shape,
+      boxStyle: circleStyle(target)
     };
   }
 
-  if (step.annotation === 'arrow') {
+  if (shape === 'arrow') {
     return {
-      type: step.annotation,
+      type: shape,
       boxStyle: baseBox,
-      arrowPath: buildArrowPath(step.target)
-    };
-  }
-
-  if (step.annotation === 'tooltip') {
-    return {
-      type: step.annotation,
-      boxStyle: baseBox,
-      tooltipPosition: tooltipStyle(step.target)
+      arrowPath: buildArrowPath(target)
     };
   }
 
   return {
-    type: 'circle',
-    boxStyle: baseBox
+    type: 'box',
+    boxStyle: {
+      ...baseBox,
+      borderRadius: '12px'
+    }
   };
 }

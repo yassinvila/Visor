@@ -2,6 +2,7 @@
  * diagnoseTLM.js — Simple diagnostic to check what's broken in testLLM.js
  */
 
+require('dotenv').config();
 const path = require('path');
 const ROOT = path.resolve(__dirname, '..');
 
@@ -36,7 +37,9 @@ try {
 // Step 4: Test prompts import
 console.log('\n4. Testing llm/prompts import:');
 try {
-  const { initial_prompt } = require(path.join(ROOT, 'electron-main/llm/prompts'));
+  const promptsModule = require(path.join(ROOT, 'electron-main/llm/prompts'));
+  // Support both CommonJS named exports and ES module default exports
+  const initial_prompt = promptsModule.initial_prompt || promptsModule.default || promptsModule;
   console.log('   ✓ llm/prompts imported successfully');
   console.log('   initial_prompt length:', initial_prompt ? initial_prompt.length : 'undefined');
 } catch (e) {
@@ -51,6 +54,38 @@ try {
   console.log('   parseStepResponse type:', typeof parser.parseStepResponse);
 } catch (e) {
   console.log('   ✗ Error importing parser:', e.message);
+}
+
+// Step 6: Optional LLM smoke test (only runs if API key is set)
+console.log('\n6. Optional LLM smoke test:');
+try {
+  const { sendCompletion } = require(path.join(ROOT, 'electron-main/llm/client'));
+  const promptsModule = require(path.join(ROOT, 'electron-main/llm/prompts'));
+  const initial_prompt = promptsModule.initial_prompt || promptsModule.default || promptsModule;
+
+  if (!process.env.OPENROUTER_API_KEY) {
+    console.log('   - OPENROUTER_API_KEY not set; skipping live LLM call.');
+    console.log('     To run live test, set OPENROUTER_API_KEY and re-run this script.');
+  } else {
+    (async () => {
+      try {
+        console.log('   - Making a small test completion request (this will use your API key)');
+        // Use a public HTTPS image URL (providers may reject data URLs)
+        const httpsTestImage = 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a3/June_odd-eyed-cat.jpg/320px-June_odd-eyed-cat.jpg';
+        const resp = await sendCompletion({
+          systemPrompt: initial_prompt,
+          userGoal: 'Test: open a file menu',
+          screenshotBase64: httpsTestImage,
+          extras: { test: true }
+        });
+        console.log('   ✓ LLM call succeeded. Response preview:', String(resp).slice(0, 200));
+      } catch (err) {
+        console.log('   ✗ LLM call failed:', err.message || err);
+      }
+    })();
+  }
+} catch (e) {
+  console.log('   ✗ Skipping LLM smoke test (client import failed):', e.message);
 }
 
 console.log('\n=== Recommendations ===');

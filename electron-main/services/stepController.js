@@ -9,8 +9,8 @@
  */
 
 const screenCapture = require('./screenCapture');
-const llmClient = require('../llm/client');
-const parseStepResponse = require('../llm/parser');
+const { sendCompletion } = require('../llm/client');
+const { parseStepResponse } = require('../llm/parser');
 const storage = require('./storage');
 
 // Internal state for the current session
@@ -123,15 +123,24 @@ async function requestNextStep() {
 
     // Step 2: Build prompt with goal and history
     const prompt = buildPrompt(state.currentGoal, state.stepHistory, screenshot);
+    const screenshotBase64 = screenshot.imageBuffer?.toString('base64');
+    if (!screenshotBase64) {
+      throw new Error('Screenshot capture did not return an image buffer');
+    }
 
     // Step 3: Call LLM client
-    const llmResponse = await llmClient(prompt);
+    const llmResponse = await sendCompletion({
+      systemPrompt: prompt.systemPrompt,
+      userGoal: prompt.userGoal,
+      screenshotBase64,
+      extras: prompt.extras
+    });
     if (!llmResponse) {
       throw new Error('LLM returned empty response');
     }
 
     // Step 4: Parse LLM response into structured step object
-    const parsedStep = await parseStepResponse(llmResponse);
+    const parsedStep = parseStepResponse(llmResponse);
     if (!parsedStep) {
       throw new Error('Parser returned null step object');
     }
@@ -150,10 +159,11 @@ async function requestNextStep() {
     if (state.currentStep) {
       state.stepHistory.push(state.currentStep);
     }
-    state.currentStep = parsedStep;
+    const decoratedStep = attachScreenshotMetadata(parsedStep, screenshot);
+    state.currentStep = decoratedStep;
 
     // Step 6: Notify via callback
-    callbacks.onStep?.(parsedStep);
+    callbacks.onStep?.(decoratedStep);
 
     // Step 7: Check if this is the final step
     if (parsedStep.is_final_step) {
@@ -233,45 +243,85 @@ function getState() {
 }
 
 /**
- * Build a prompt for the LLM, incorporating goal, history, and screenshot.
+ * Build structured prompt parameters for the LLM call.
  * 
  * @param {string} goal
  * @param {Array} history - Previous steps
  * @param {Object} screenshot - From screenCapture
- * @returns {string} Formatted prompt
+ * @returns {{systemPrompt: string, userGoal: string, extras: object}}
  */
 function buildPrompt(goal, history, screenshot) {
-  // Start with the base prompt from prompts.js (or inline a simpler version)
-  const basePrompt = `You are Visor, an AI assistant guiding a user through a task step-by-step.
+  const systemPrompt = `You are Visor, an AI assistant guiding desktop users through multi-step workflows.
 
-Goal: ${goal}
+You must:
+- Inspect the screenshot to understand exactly which UI the user currently sees.
+- Provide only the single next actionable instruction toward the goal.
+- Reference actual on-screen labels/icons in your description.
+- Output valid JSON with normalized coordinates between 0 and 1.
 
-Current screenshot: [Image data to follow]
+If the UI element you need is missing, respond with {"error": true, "reason": "..."} and explain what is missing.`;
 
-${history.length > 0 ? `Previous steps taken:\n${history.map(s => `- ${s.step_description}`).join('\n')}\n` : ''}
+  const serializedHistory = history.map((step, index) => ({
+    index: index + 1,
+    description: step.step_description,
+    label: step.label,
+    shape: step.shape,
+    bbox: step.bbox
+  }));
 
-Analyze the screenshot and provide the NEXT single step to move toward the goal.
-
-Return valid JSON:
-{
-  "step_description": "string describing what to do",
-  "shape": "circle" | "arrow" | "box",
-  "bbox": {
-    "x": 0.0,
-    "y": 0.0,
-    "width": 0.0,
-    "height": 0.0
-  },
-  "label": "short hint text",
-  "is_final_step": false
+  return {
+    systemPrompt,
+    userGoal: goal,
+    extras: {
+      instructions: 'Return JSON with step_description, shape, bbox, label, is_final_step (boolean).',
+      previous_steps: serializedHistory,
+      screenshot_meta: {
+        width: screenshot?.width ?? null,
+        height: screenshot?.height ?? null,
+        mock_capture: Boolean(screenshot?.mockData)
+      }
+    }
+  };
 }
 
-Coordinates are normalized (0-1 relative to screen size).
-`;
+function attachScreenshotMetadata(step, screenshot) {
+  if (!step || !screenshot) {
+    return step;
+  }
 
-  // In a real implementation, you might attach the screenshot as base64
-  // For now, this is a text-based prompt
-  return basePrompt;
+  const width = Number(screenshot.width) || 1;
+  const height = Number(screenshot.height) || 1;
+
+  const toPixels = (value, size) => {
+    const numeric = Number(value);
+    if (!Number.isFinite(numeric)) return 0;
+    return Math.max(0, numeric) * size;
+  };
+
+  const bboxPixels = step.bbox
+    ? {
+        x: toPixels(step.bbox.x, width),
+        y: toPixels(step.bbox.y, height),
+        width: toPixels(step.bbox.width, width),
+        height: toPixels(step.bbox.height, height)
+      }
+    : null;
+
+  return {
+    ...step,
+    bboxPixels,
+    viewport: {
+      width,
+      height,
+      devicePixelRatio: screenshot.devicePixelRatio || screenshot.scale || 1
+    },
+    screenshotMeta: {
+      width,
+      height,
+      timestamp: screenshot.timestamp,
+      mock: Boolean(screenshot.mockData)
+    }
+  };
 }
 
 /**
@@ -314,7 +364,11 @@ Respond with JSON:
   "needs_substeps": boolean
 }`;
 
-    const offTaskResponse = await llmClient(offTaskPrompt);
+    const offTaskResponse = await sendCompletion({
+      systemPrompt: 'You are monitoring task progress.',
+      userGoal: offTaskPrompt,
+      screenshotBase64: screenshot.imageBuffer?.toString('base64') || ''
+    });
     const offTaskAnalysis = JSON.parse(offTaskResponse.match(/\{[\s\S]*\}/)[0]);
 
     if (offTaskAnalysis.is_off_task && offTaskAnalysis.needs_substeps) {
@@ -359,7 +413,11 @@ Respond with JSON array:
   }
 ]`;
 
-    const substepResponse = await llmClient(refocusPrompt);
+    const substepResponse = await sendCompletion({
+      systemPrompt: 'You are generating recovery substeps.',
+      userGoal: refocusPrompt,
+      screenshotBase64: screenshot.imageBuffer?.toString('base64') || ''
+    });
     const substepMatches = substepResponse.match(/\[[\s\S]*\]/);
     
     if (substepMatches) {
@@ -423,5 +481,6 @@ module.exports = {
   markDone,
   markSubstepDone,
   detectAndHandleOffTask,
-  getState
+  getState,
+  _attachScreenshotMetadata: attachScreenshotMetadata
 };

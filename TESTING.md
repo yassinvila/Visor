@@ -96,6 +96,106 @@ chmod 755 ~/.visor
 - Ensure `app.getPath('userData')` or `~/.visor` is writable
 - Check that storage.js exports all 12 methods
 
+## Diagnosing LLM & Capture (`diagnoseTLM.js`)
+
+For quick diagnostics related to the LLM client and screen capture, run the lightweight checker:
+
+```bash
+# Run from repository root (zsh / macOS / Linux)
+node scripts/diagnoseTLM.js
+```
+
+PowerShell (Windows):
+
+```powershell
+# From repo root
+node .\scripts\diagnoseTLM.js
+```
+
+What it checks:
+- Environment variables (`OPENROUTER_API_KEY`, `VISOR_USE_REAL_CAPTURE`, `LAPTOP_VERSION`)
+- Imports for `screenCapture`, `llm/client`, `llm/prompts`, and `llm/parser`
+- Optional live LLM smoke test (only if `OPENROUTER_API_KEY` is set)
+
+Common issues and fixes:
+- `LAPTOP_VERSION` prints `undefined` — the script reads `process.env.LAPTOP_VERSION`. Ensure your Node process loads `.env` (see below) or export it in your shell before running. Example:
+
+  - zsh:
+    ```bash
+    export LAPTOP_VERSION=surface-laptop
+    node scripts/diagnoseTLM.js
+    ```
+
+  - PowerShell:
+    ```powershell
+    $env:LAPTOP_VERSION = 'surface-laptop'; node .\scripts\diagnoseTLM.js
+    ```
+
+- `Invalid image data` from the LLM provider — the diagnostic now sends a tiny valid 1x1 PNG when exercising the API. If you still see image errors, ensure the provider accepts inline base64 images and your key/usage is configured correctly.
+
+- Image dimension detection falls back to `LAPTOP_VERSION` when the capture path cannot determine actual image dimensions. To enable automatic dimension detection, install `image-size`:
+
+```bash
+npm install --save image-size
+```
+
+This allows `screenCapture` to probe buffers and avoid using the `LAPTOP_VERSION` fallback.
+
+- If your scripts sometimes don't pick up `.env`, make loading explicit at the top of scripts (e.g., `scripts/diagnoseTLM.js`) so the repo `.env` is read regardless of current working directory:
+
+```javascript
+// Top of script
+require('dotenv').config({ path: require('path').join(__dirname, '..', '.env') });
+```
+
+- For accurate runtime display dimensions (when running as an Electron app), prefer querying Electron's `screen` API from the main process:
+
+```javascript
+const { screen } = require('electron');
+const { width, height } = screen.getPrimaryDisplay().size;
+```
+
+## Overlay Rendering Preview (`testOverlay.js`)
+
+Use the JSON-driven overlay harness to validate annotation geometry from LLM output (or handcrafted payloads).
+
+```bash
+# From repo root
+node scripts/testOverlay.js scripts/sampleOverlayStep.json \
+  --width=1920 \
+  --height=1080 \
+  --output=/tmp/overlay-preview.html
+```
+
+What it does:
+- Loads the provided JSON payload (must include `step_description`, `shape`, and normalized `bbox`).
+- Converts normalized coordinates into pixels for the specified viewport dimensions.
+- Invokes `renderer/overlay/drawing/circle.ts` to generate the circular highlight styling.
+- Produces a standalone HTML file that visualizes the bounding box plus annotation ring.
+
+Arguments:
+- `path/to/json` (required): step payload file.
+- `--width` / `--height` (optional): viewport size (defaults 1920x1080).
+- `--output` (optional): destination HTML (defaults to `overlay-preview.html` in cwd).
+
+Sample payload: `scripts/sampleOverlayStep.json` mirrors the Spotify dock example described in the LLM instructions.
+
+Need a quick ad-hoc payload? Create one inline:
+
+```bash
+cat <<'JSON' > /tmp/step.json
+{
+  "step_description": "Click the green Spotify icon in the dock at the bottom of the screen to open the Spotify app.",
+  "shape": "circle",
+  "bbox": { "x": 0.458, "y": 0.935, "width": 0.034, "height": 0.056 },
+  "label": "Open Spotify",
+  "is_final_step": false
+}
+JSON
+
+node scripts/testOverlay.js /tmp/step.json --width=2560 --height=1600
+```
+
 ## Full Test Run Example
 
 ```bash
