@@ -219,6 +219,24 @@ module.exports = {
   captureCurrentScreen,
   loadDemoImage,
   setOverlayWindow,
-  clearOverlayWindow
+  clearOverlayWindow,
+  /**
+   * captureRegion — temporary implementation that captures the whole screen
+   * and returns the buffer with region metadata attached. Cropping is left
+   * for a future optimization when an image library is introduced.
+   * 
+   * @param {number} x
+   * @param {number} y
+   * @param {number} width
+   * @param {number} height
+   * @returns {Promise<{ imageBuffer: Buffer, width: number, height: number, region: {x:number,y:number,width:number,height:number} }>}
+   */
+  captureRegion: async function captureRegion(x, y, width, height) {
+    const shot = await captureCurrentScreen();
+    return {
+      ...shot,
+      region: { x, y, width, height }
+    };
+  }
 };
 

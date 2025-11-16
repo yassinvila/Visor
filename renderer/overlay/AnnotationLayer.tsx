@@ -14,6 +14,7 @@ export const AnnotationLayer: React.FC<AnnotationLayerProps> = ({
   viewportWidth,
   viewportHeight
 }) => {
+  const SHOW_LABELS = false;
   const boundingBox = useMemo(
     () => computeBoundingBox(instruction, viewportWidth, viewportHeight),
     [instruction, viewportWidth, viewportHeight]
@@ -28,6 +29,18 @@ export const AnnotationLayer: React.FC<AnnotationLayerProps> = ({
 
   return (
     <div className="annotation-layer">
+      {/* Invisible, clickable hit-target to detect user action within bbox */}
+      <div
+        className="bbox-hit-target"
+        style={toHitTargetStyle(boundingBox)}
+        onClick={() => {
+          try {
+            const id = instruction.id;
+            (window as any)?.visor?.overlay?.markDone?.(id);
+          } catch (_) {}
+        }}
+        title=""
+      />
       {config.type === 'box' && <div className="annotation-box" style={config.boxStyle} />}
       {config.type === 'circle' && <div className="annotation-circle" style={config.boxStyle} />}
       {config.type === 'arrow' && config.arrowPath && (
@@ -39,9 +52,11 @@ export const AnnotationLayer: React.FC<AnnotationLayerProps> = ({
           <path d={config.arrowPath} />
         </svg>
       )}
-      <div className="annotation-label" style={labelStyle}>
-        {instruction.label}
-      </div>
+      {SHOW_LABELS && (
+        <div className="annotation-label" style={labelStyle}>
+          {instruction.label}
+        </div>
+      )}
     </div>
   );
 };
@@ -117,5 +132,19 @@ function getLabelStyle(box: BoundingBox, viewportWidth: number, viewportHeight: 
     left: `${left}px`,
     top: `${top}px`
   };
+}
+
+function toHitTargetStyle(box: BoundingBox): CSSProperties {
+  return {
+    position: 'absolute',
+    left: `${box.x}px`,
+    top: `${box.y}px`,
+    width: `${box.width}px`,
+    height: `${box.height}px`,
+    pointerEvents: 'auto',
+    background: 'transparent',
+    // For debugging, set outline below to see the target:
+    // outline: '1px dashed rgba(255,255,255,0.2)'
+  } as CSSProperties;
 }
 

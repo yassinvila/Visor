@@ -182,6 +182,7 @@ async function requestNextStep() {
     }
     const decoratedStep = attachScreenshotMetadata(parsedStep, screenshot);
     state.currentStep = decoratedStep;
+    state.lastScreenshotBuffer = screenshot.imageBuffer;
 
     // Step 6: Notify via callback
     callbacks.onStep?.(decoratedStep);
@@ -235,6 +236,19 @@ async function markDone(stepId) {
   } catch (logError) {
     console.warn('Failed to log step completion:', logError);
     // Don't fail the workflow if logging fails
+  }
+
+  // Optional verification: capture a new screenshot and compare with previous
+  try {
+    // Small delay to allow UI to change after click
+    await new Promise((res) => setTimeout(res, 280));
+    const afterShot = await screenCapture.captureCurrentScreen();
+    const changed = computeBufferDiffRatio(state.lastScreenshotBuffer, afterShot?.imageBuffer) > 0.002;
+    // We log this info for debugging; we don't block advancement
+    console.log('[StepController] Region change heuristic:', changed ? 'changed' : 'no-change');
+    state.lastScreenshotBuffer = afterShot?.imageBuffer || state.lastScreenshotBuffer;
+  } catch (e) {
+    console.warn('[StepController] Verification skipped:', e?.message || e);
   }
 
   // Request the next step, or finish if we're on the final step
@@ -511,3 +525,23 @@ module.exports = {
   getState,
   _attachScreenshotMetadata: attachScreenshotMetadata
 };
+
+// -----------------------------------------------------------------------------
+// Lightweight buffer diff (no image decoding). Heuristic only.
+function computeBufferDiffRatio(bufA, bufB) {
+  try {
+    if (!bufA || !bufB || !Buffer.isBuffer(bufA) || !Buffer.isBuffer(bufB)) return 1;
+    const len = Math.min(bufA.length, bufB.length);
+    if (len === 0) return 1;
+    const step = Math.max(1, Math.floor(len / 5000)); // sample up to ~5k bytes
+    let diffs = 0;
+    let samples = 0;
+    for (let i = 0; i < len; i += step) {
+      if (bufA[i] !== bufB[i]) diffs++;
+      samples++;
+    }
+    return diffs / Math.max(1, samples);
+  } catch (_) {
+    return 1;
+  }
+}

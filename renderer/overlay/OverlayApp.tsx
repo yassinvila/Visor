@@ -160,6 +160,31 @@ export const OverlayApp: React.FC = () => {
     overlayBridge?.markDone?.(currentStep.id);
   }, [currentStep, overlayBridge]);
 
+  // Keyboard shortcuts for auto-stepping
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      // Enter/Return: mark done
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        markStepComplete();
+        return;
+      }
+      // Cmd/Ctrl+Enter: force next (same as mark done for now)
+      if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+        e.preventDefault();
+        markStepComplete();
+        return;
+      }
+      // Escape: skip (mark done for now; could send different IPC if desired)
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        markStepComplete();
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [markStepComplete]);
+
   const setPointerMode = useCallback(
     (mode: 'interactive' | 'passthrough') => {
       overlayBridge?.setPointerMode?.(mode);
