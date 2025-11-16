@@ -153,9 +153,65 @@ function parseStepResponse(rawResponse) {
     };
   }
 
-  // Normalize common variations: allow bbox as array [x,y,width,height]
-  if (json && json.bbox && Array.isArray(json.bbox) && json.bbox.length === 4) {
-    const [x, y, width, height] = json.bbox.map(Number);
+  // Normalize bbox: accept [x,y,width,height], [x1,y1,x2,y2], or object with x2/y2
+  function normalizeBBox(b) {
+    if (!b) return null;
+    // Array form
+    if (Array.isArray(b) && b.length === 4) {
+      let [a, b2, c, d] = b.map(Number);
+      // Heuristic: if c or d > 1 OR a+c > 1 OR b2+d > 1, treat as bottom-right
+      const looksLikeBR = (c > 1 || d > 1) || (a <= 1 && b2 <= 1 && (a + c > 1 || b2 + d > 1));
+      if (looksLikeBR) {
+        const x1 = a, y1 = b2, x2 = c, y2 = d;
+        const x = Math.min(x1, x2);
+        const y = Math.min(y1, y2);
+        const width = Math.abs(x2 - x1);
+        const height = Math.abs(y2 - y1);
+        return { x, y, width, height };
+      }
+      return { x: a, y: b2, width: c, height: d };
+    }
+    // Object form
+    if (typeof b === 'object' && b !== null) {
+      // If x2/y2 exist, convert to width/height
+      const hasX2 = typeof b.x2 === 'number' && typeof b.y2 === 'number';
+      if (hasX2) {
+        const x = Number(b.x), y = Number(b.y);
+        const x2 = Number(b.x2), y2 = Number(b.y2);
+        return {
+          x: Math.min(x, x2),
+          y: Math.min(y, y2),
+          width: Math.abs(x2 - x),
+          height: Math.abs(y2 - y)
+        };
+      }
+      // Assume already width/height
+      return {
+        x: Number(b.x),
+        y: Number(b.y),
+        width: Number(b.width),
+        height: Number(b.height)
+      };
+    }
+    return null;
+  }
+
+  if (json && json.bbox) {
+    json.bbox = normalizeBBox(json.bbox);
+  }
+
+  // Clamp and repair boxes into [0,1] and ensure minimal size
+  if (json && json.bbox) {
+    let { x, y, width, height } = json.bbox;
+    x = Number.isFinite(x) ? x : 0;
+    y = Number.isFinite(y) ? y : 0;
+    width = Number.isFinite(width) ? width : 0.0001;
+    height = Number.isFinite(height) ? height : 0.0001;
+    x = Math.max(0, Math.min(1, x));
+    y = Math.max(0, Math.min(1, y));
+    // Fit box into viewport
+    width = Math.max(0.0001, Math.min(1 - x, width));
+    height = Math.max(0.0001, Math.min(1 - y, height));
     json.bbox = { x, y, width, height };
   }
 

@@ -241,7 +241,8 @@ registerChatIPC({
 
 **Configuration:**
 ```javascript
-DEFAULT_MODEL = process.env.OPENROUTER_MODEL || 'openai/gpt-4o-mini'
+// DEFAULT_MODEL = process.env.OPENROUTER_MODEL || 'openai/gpt-4o-mini'
+DEFAULT_MODEL = process.env.OPENROUTER_MODEL || 'openrouter/andromeda-alpha'
 DEFAULT_TEMPERATURE = normalizeTemperature(process.env.OPENROUTER_TEMPERATURE) // default 0.2
 OPENROUTER_API_KEY // required in env
 ```

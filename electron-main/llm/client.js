@@ -12,7 +12,7 @@ require('dotenv').config();
 const { OpenRouter } = require('@openrouter/sdk');
 
 const DEFAULT_MODEL = process.env.OPENROUTER_MODEL || 'openai/gpt-4o';
-const PREFERRED_PROVIDER = process.env.OPENROUTER_PREFERRED_PROVIDER || 'OpenAI';
+//const PREFERRED_PROVIDER = process.env.OPENROUTER_PREFERRED_PROVIDER || 'OpenAI';
 const DEFAULT_TEMPERATURE = normalizeTemperature(process.env.OPENROUTER_TEMPERATURE);
 let openRouterClient;
 
@@ -37,34 +37,11 @@ async function sendCompletion({
 } = {}) {
   const client = getOpenRouterClient();
   const messages = buildMessages({ systemPrompt, userGoal, screenshotBase64, extras });
-
-  // const requestBody = {
-  //   model: "openai/chatgpt-4o-latest",
-  //   messages: [
-  //     { role: "system", content: system },
-  //     {
-  //       role: "user",
-  //       content: [
-  //         {
-  //           type: "text",
-  //           text: `User Goal: ${userGoal}${lastStep ? `\nLast Step: ${lastStep}` : ''}\n\nPlease analyze the screenshot and provide the next step as JSON.`
-  //         },
-  //         {
-  //           type: "image_url",
-  //           image_url: { url: `data:image/png;base64,${base64Image}` }
-  //         }
-  //       ]
-  //     }
-  //   ],
-  //   temperature: 0.7,
-  //   max_tokens: 1000,
-  //   response_format: { type: "json_object" }
-  // };
   const response = await client.chat.send({
     model: DEFAULT_MODEL,
     temperature: DEFAULT_TEMPERATURE,
     messages,
-    provider: { order: [PREFERRED_PROVIDER], include: [PREFERRED_PROVIDER], allow_fallbacks: false },
+    //provider: { order: [PREFERRED_PROVIDER], include: [PREFERRED_PROVIDER], allow_fallbacks: false },
     stream: false
   });
 

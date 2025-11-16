@@ -280,7 +280,13 @@ You must:
 - Reference actual on-screen labels/icons in your description.
 - Output valid JSON with normalized coordinates between 0 and 1.
 
-If the UI element you need is missing, respond with {"error": true, "reason": "..."} and explain what is missing.`;
+Important rule about unopened apps:
+- If the target application or UI is not currently open, DO NOT return an error if there is a visible affordance to open it (e.g., a dock icon, launcher icon, menu bar item, or shortcut on screen). In that case, instruct the user to click the visible affordance to open the app, with a tight bbox over that icon/button.
+- Only return {"error": true, "reason": "..."} when there is truly no visible path on the screen to proceed (no dock/launcher/menu affordance).
+
+Shape policy:
+- Use "circle" for standalone icons/buttons, "box" for rectangular UI regions, and "arrow" for pointing from one element to another.
+`;
 
   const serializedHistory = history.map((step, index) => ({
     index: index + 1,

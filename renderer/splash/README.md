@@ -27,6 +27,8 @@ Beautiful startup loading sequence for the Visor app.
 
 **Total Duration:** ~5.5 seconds
 
+Note: The improved sequence now defaults to ~3.2 seconds with smoother pacing and reduced CPU usage. It respects `prefers-reduced-motion` and uses a CSS variable–driven mask for the reveal.
+
 ## Files
 
 - `electron-main/windows/splashWindow.js` - Window creation logic
@@ -85,15 +87,32 @@ Edit visual styles in `renderer/splash/splash.css`:
 
 ### Transparent Reveal Effect
 
-The expanding transparent circle uses CSS `mask-image` with a radial gradient:
+The expanding transparency now uses a CSS variable–driven radial `mask-image` applied to the white box. The inner white area shrinks over time, revealing the app beneath from the edges inward:
 
-```javascript
-// Creates expanding transparency from center
-whiteBox.style.maskImage = 
-  `radial-gradient(circle at center, 
-    transparent ${circleSize}%, 
-    white ${circleSize + softEdge}%)`;
+```css
+/* Base (in CSS) */
+#white-box {
+   --r: 150;     /* inner white radius percent */
+   --edge: 40;   /* soft edge width percent */
+   -webkit-mask-image: radial-gradient(
+      circle at center,
+      white calc(var(--r) * 1%),
+      transparent calc((var(--r) + var(--edge)) * 1%)
+   );
+   mask-image: radial-gradient(
+      circle at center,
+      white calc(var(--r) * 1%),
+      transparent calc((var(--r) + var(--edge)) * 1%)
+   );
+}
+
+/* Animation */
+.reveal-expanding {
+   animation: revealMaskShrink var(--reveal-duration, 1200ms) cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
 ```
+
+This removes the JavaScript `requestAnimationFrame` animator for the mask and lets the browser optimize the transition.
 
 ### Smooth Easing
 
@@ -101,9 +120,11 @@ All animations use `cubic-bezier(0.4, 0, 0.2, 1)` for professional motion feel.
 
 ### Performance
 
-- Uses CSS transforms (hardware accelerated)
-- RequestAnimationFrame for smooth 60fps
-- No layout thrashing or reflows
+- CSS variable animation for mask (browser-optimized)
+- Reduced total duration (~3.2s) for a snappier feel
+- Fewer JS-driven animations; more work done in CSS
+- `will-change`/`contain` hints reduce layout/repaint cost
+- Respects `prefers-reduced-motion`
 
 ## Integration
 

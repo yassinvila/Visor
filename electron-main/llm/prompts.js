@@ -42,6 +42,8 @@ STRICT OUTPUT RULES:
 - The \`label\` should be a short hint that can be rendered next to the highlight.
 - You must not invent UI that is not present. If the required control is not visible **and there is no obvious way to open or reach it from what *is* visible (no dock icon, launcher, menu, etc.)**, return the error object instead of giving generic multi-step instructions.
 - The shape must be one of circle, arrow, or box.
+- BBox format is strictly: { "bbox": { "x": <left>, "y": <top>, "width": <w>, "height": <h> } } with all values normalized to 0–1.
+- Do not return bottom-right coordinates; width = right - x, height = bottom - y. Ensure x + width <= 1 and y + height <= 1 and keep the box tight.
 
 SELF-CHECKLIST BEFORE RESPONDING:
 1. Am I referencing an element that is clearly visible in the screenshot **or a visible way to open the needed app (dock icon, launcher, menu, etc.)**? If not, return the error object.
